@@ -81,25 +81,25 @@ export default function LoginPage() {
           </div>
           <h1 className="login-brand-title">Portofin</h1>
           <p className="login-brand-subtitle">
-            Pantau portofolio saham IDX &amp; crypto kamu dengan harga real-time
+            Pantau portofolio saham Indonesia &amp; crypto kamu dengan harga real-time
           </p>
 
           <div className="login-features">
             <div className="login-feature">
               <div className="login-feature-dot" />
-              <span>Harga saham IDX real-time</span>
+              <span>Harga saham real-time</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />
-              <span>Tracking crypto via CoinGecko</span>
+              <span>Tracking crypto real-time</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />
-              <span>Toggle mata uang IDR &amp; USD</span>
+              <span>Dukungan multi mata uang (IDR &amp; USD)</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />
-              <span>Analitik portofolio &amp; tracking P/L</span>
+              <span>Analitik portofolio &amp; P/L</span>
             </div>
           </div>
         </div>
