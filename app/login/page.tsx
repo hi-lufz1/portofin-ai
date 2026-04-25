@@ -81,7 +81,7 @@ export default function LoginPage() {
           </div>
           <h1 className="login-brand-title">Portofin</h1>
           <p className="login-brand-subtitle">
-            Pantau portofolio saham Indonesia &amp; crypto kamu dengan harga real-time
+            Pantau portofolio saham &amp; crypto kamu dengan harga real-time
           </p>
 
           <div className="login-features">
