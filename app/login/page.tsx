@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { TrendingUp, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { TrendingUp, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, User } from 'lucide-react';
 
 export default function LoginPage() {
   const { signIn, signUp, signInWithGoogle, isDemo } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -22,17 +23,17 @@ export default function LoginPage() {
     setSuccess(null);
 
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError('Mohon isi semua field yang diperlukan');
       return;
     }
 
     if (mode === 'register' && password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Password tidak cocok');
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError('Password minimal 6 karakter');
       return;
     }
 
@@ -46,12 +47,12 @@ export default function LoginPage() {
         if (err) {
           setError(err);
         } else {
-          setSuccess('Account created! Check your email for verification link.');
+          setSuccess('Akun berhasil dibuat! Cek email kamu untuk verifikasi.');
           setMode('login');
         }
       }
     } catch {
-      setError('An unexpected error occurred');
+      setError('Terjadi kesalahan yang tidak terduga');
     } finally {
       setLoading(false);
     }
@@ -64,7 +65,7 @@ export default function LoginPage() {
       const { error: err } = await signInWithGoogle();
       if (err) setError(err);
     } catch {
-      setError('Failed to sign in with Google');
+      setError('Gagal masuk dengan Google');
     } finally {
       setGoogleLoading(false);
     }
@@ -80,31 +81,31 @@ export default function LoginPage() {
           </div>
           <h1 className="login-brand-title">Portofin</h1>
           <p className="login-brand-subtitle">
-            Track your IDX stocks &amp; crypto portfolio with real-time prices
+            Pantau portofolio saham IDX &amp; crypto kamu dengan harga real-time
           </p>
 
           <div className="login-features">
             <div className="login-feature">
               <div className="login-feature-dot" />
-              <span>Real-time IDX stock prices</span>
+              <span>Harga saham IDX real-time</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />
-              <span>Crypto tracking via CoinGecko</span>
+              <span>Tracking crypto via CoinGecko</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />
-              <span>IDR &amp; USD currency toggle</span>
+              <span>Toggle mata uang IDR &amp; USD</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />
-              <span>Portfolio analytics &amp; P/L tracking</span>
+              <span>Analitik portofolio &amp; tracking P/L</span>
             </div>
           </div>
         </div>
 
         <div className="login-brand-footer">
-          <span>Built with Next.js &amp; Supabase</span>
+          <span>© 2026 Portofin. Built by Latif Fauzi.</span>
         </div>
       </div>
 
@@ -113,7 +114,7 @@ export default function LoginPage() {
         <div className="login-form-container">
           {isDemo && (
             <div className="login-demo-banner" id="demo-banner">
-              <strong>Demo Mode</strong>
+              <strong>Mode Demo</strong>
               <p>Supabase belum dikonfigurasi. Login dinonaktifkan — kamu langsung masuk ke dashboard dengan data demo.</p>
               <a href="/dashboard" className="btn-primary login-demo-btn">
                 Masuk ke Dashboard
@@ -124,12 +125,12 @@ export default function LoginPage() {
 
           <div className="login-form-header">
             <h2 className="login-form-title">
-              {mode === 'login' ? 'Welcome back' : 'Create account'}
+              {mode === 'login' ? 'Selamat Datang Kembali' : 'Buat Akun Baru'}
             </h2>
             <p className="login-form-subtitle">
               {mode === 'login'
-                ? 'Sign in to access your portfolio'
-                : 'Register to start tracking your investments'}
+                ? 'Masuk untuk mengakses portofolio kamu'
+                : 'Daftar untuk mulai tracking investasi kamu'}
             </p>
           </div>
 
@@ -141,6 +142,25 @@ export default function LoginPage() {
               <div className="login-success" id="auth-success">{success}</div>
             )}
 
+            {mode === 'register' && (
+              <div className="form-group">
+                <label htmlFor="name" className="form-label">Nama Lengkap</label>
+                <div className="login-input-wrap">
+                  <User size={16} className="login-input-icon" />
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Masukkan nama lengkap"
+                    className="form-input login-input"
+                    disabled={isDemo}
+                    autoComplete="name"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="form-group">
               <label htmlFor="email" className="form-label">Email</label>
               <div className="login-input-wrap">
@@ -150,7 +170,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
+                  placeholder="contoh@email.com"
                   className="form-input login-input"
                   disabled={isDemo}
                   autoComplete="email"
@@ -167,7 +187,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min. 6 characters"
+                  placeholder="Min. 6 karakter"
                   className="form-input login-input"
                   disabled={isDemo}
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
@@ -185,7 +205,7 @@ export default function LoginPage() {
 
             {mode === 'register' && (
               <div className="form-group">
-                <label htmlFor="confirm-password" className="form-label">Confirm Password</label>
+                <label htmlFor="confirm-password" className="form-label">Konfirmasi Password</label>
                 <div className="login-input-wrap">
                   <Lock size={16} className="login-input-icon" />
                   <input
@@ -193,7 +213,7 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat password"
+                    placeholder="Ulangi password"
                     className="form-input login-input"
                     disabled={isDemo}
                     autoComplete="new-password"
@@ -209,17 +229,17 @@ export default function LoginPage() {
               id="auth-submit"
             >
               {loading ? (
-                <><Loader2 size={16} className="spin" /> Processing...</>
+                <><Loader2 size={16} className="spin" /> Memproses...</>
               ) : mode === 'login' ? (
-                <>Sign In <ArrowRight size={16} /></>
+                <>Masuk <ArrowRight size={16} /></>
               ) : (
-                <>Create Account <ArrowRight size={16} /></>
+                <>Buat Akun <ArrowRight size={16} /></>
               )}
             </button>
           </form>
 
           <div className="login-divider">
-            <span>or</span>
+            <span>atau</span>
           </div>
 
           <button
@@ -238,22 +258,22 @@ export default function LoginPage() {
                 <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
               </svg>
             )}
-            Continue with Google
+            Lanjutkan dengan Google
           </button>
 
           <div className="login-toggle">
             {mode === 'login' ? (
               <p>
-                Don&apos;t have an account?{' '}
+                Belum punya akun?{' '}
                 <button onClick={() => { setMode('register'); setError(null); setSuccess(null); }} className="login-toggle-link" id="switch-to-register">
-                  Register
+                  Daftar
                 </button>
               </p>
             ) : (
               <p>
-                Already have an account?{' '}
+                Sudah punya akun?{' '}
                 <button onClick={() => { setMode('login'); setError(null); setSuccess(null); }} className="login-toggle-link" id="switch-to-login">
-                  Sign in
+                  Masuk
                 </button>
               </p>
             )}
