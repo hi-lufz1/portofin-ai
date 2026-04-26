@@ -9,9 +9,13 @@ import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 export default function TransactionTable() {
   const { transactions, holdings } = usePortfolio();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, exchangeRate } = useCurrency();
   const { t } = useLanguage();
   const router = useRouter();
+
+  /** Normalize a transaction amount to IDR so formatCurrency can handle the toggle */
+  const toIDR = (amount: number, currency: string) =>
+    currency === 'USD' ? amount * exchangeRate : amount;
 
   // Sort transactions newest first
   const sorted = useMemo(() =>
@@ -100,10 +104,10 @@ export default function TransactionTable() {
                       {tx.quantity.toLocaleString('en-US', { maximumFractionDigits: 4 })}
                     </td>
                     <td className="text-right tabular">
-                      {formatCurrency(tx.price)}
+                      {formatCurrency(toIDR(tx.price, tx.price_currency))}
                     </td>
                     <td className="text-right tabular font-medium">
-                      {formatCurrency(tx.total)}
+                      {formatCurrency(toIDR(tx.total, tx.price_currency))}
                     </td>
                     <td className="tx-note">{tx.note || '—'}</td>
                   </tr>

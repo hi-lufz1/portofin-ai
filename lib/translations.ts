@@ -6,6 +6,8 @@ export const translations: Record<string, Record<Language, string>> = {
   'nav.explore': { id: 'Jelajahi', en: 'Explore' },
   'nav.transactions': { id: 'Transaksi', en: 'Transactions' },
   'nav.signout': { id: 'Keluar', en: 'Sign Out' },
+  'nav.language': { id: 'Bahasa', en: 'Language' },
+  'nav.currency': { id: 'Mata Uang', en: 'Currency' },
 
   // Dashboard
   'dashboard.title': { id: 'Portofolio', en: 'Portfolio' },

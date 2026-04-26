@@ -112,7 +112,16 @@ export default function LoginPage() {
       {/* Right Panel - Form */}
       <div className="login-form-panel">
         <div className="login-form-container">
-          {isDemo && (
+          {/* Mobile Branding Header — only visible on mobile */}
+          <div className="login-mobile-brand" id="login-mobile-brand">
+            <div className="login-mobile-logo">
+              <TrendingUp size={22} strokeWidth={2.5} />
+            </div>
+            <span className="login-mobile-brand-text">Portofin</span>
+          </div>
+
+          <div className="login-form-content">
+            {isDemo && (
             <div className="login-demo-banner" id="demo-banner">
               <strong>Mode Demo</strong>
               <p>Supabase belum dikonfigurasi. Login dinonaktifkan — kamu langsung masuk ke dashboard dengan data demo.</p>
@@ -277,6 +286,12 @@ export default function LoginPage() {
                 </button>
               </p>
             )}
+          </div>
+          </div>
+
+          {/* Mobile Footer — only visible on mobile */}
+          <div className="login-mobile-footer" id="login-mobile-footer">
+            <span>© 2026 Portofin. Built by Latif Fauzi.</span>
           </div>
         </div>
       </div>

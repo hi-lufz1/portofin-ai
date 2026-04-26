@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Holding, Transaction, EnrichedHolding, PortfolioSummary, AddAssetFormData, Portfolio, PriceData } from '@/types';
-import { getCryptoPrices, getStockPrices } from '@/lib/prices';
+import { getCryptoPrices, getStockPrices, getExchangeRate } from '@/lib/prices';
 
 interface PortfolioContextType {
   // Portfolio management
@@ -183,6 +183,11 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
 
       let cryptoPrices: Record<string, PriceData> = {};
       let stockPrices: Record<string, PriceData> = {};
+      let usdToIdr = 16500; // fallback
+
+      try {
+        usdToIdr = await getExchangeRate();
+      } catch (e) { console.warn('Exchange rate fetch failed, using fallback:', e); }
 
       try {
         if (cryptoIds.length > 0) cryptoPrices = await getCryptoPrices(cryptoIds);
@@ -205,8 +210,13 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
           priceChange24h = stockPrices[h.ticker].change_24h;
         }
 
+        // Convert avg_buy_price to IDR if it was stored in USD
+        const avgBuyPriceInIDR = h.buy_price_currency === 'USD'
+          ? h.avg_buy_price * usdToIdr
+          : h.avg_buy_price;
+
         const currentValue = h.quantity * currentPrice;
-        const totalInvested = h.quantity * h.avg_buy_price;
+        const totalInvested = h.quantity * avgBuyPriceInIDR;
         const profitLoss = currentValue - totalInvested;
         const profitLossPct = totalInvested > 0 ? (profitLoss / totalInvested) * 100 : 0;
 

@@ -49,7 +49,7 @@ export default function AssetDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { holdings, transactions, loading } = usePortfolio();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, exchangeRate } = useCurrency();
   const { t } = useLanguage();
 
   const [actionType, setActionType] = useState<HoldingAction>(null);
@@ -202,8 +202,11 @@ export default function AssetDetailPage() {
           </div>
           <span className="detail-stat-value">{formatCurrency(holding.current_value)}</span>
           <span className="detail-stat-sub">
-            {t('detail.avgPrice')}: {formatCurrency(holding.avg_buy_price)}
-            {holding.buy_price_currency === 'USD' ? ' USD' : ''}
+            {t('detail.avgPrice')}: {formatCurrency(
+              holding.buy_price_currency === 'USD'
+                ? holding.avg_buy_price * exchangeRate
+                : holding.avg_buy_price
+            )}
           </span>
         </div>
 
@@ -328,13 +331,22 @@ export default function AssetDetailPage() {
                             : tx.quantity.toLocaleString('en-US', { maximumFractionDigits: 6 })}
                         </span>
                         <span className="detail-tx-price">
-                          @ {formatCurrency(tx.price)}
-                          {tx.price_currency === 'USD' ? ' USD' : ''}
+                          @ {formatCurrency(
+                            tx.price_currency === 'USD'
+                              ? tx.price * exchangeRate
+                              : tx.price
+                          )}
                         </span>
                       </div>
                     </div>
                     <div className="detail-tx-right">
-                      <span className="detail-tx-total">{formatCurrency(tx.total)}</span>
+                      <span className="detail-tx-total">
+                        {formatCurrency(
+                          tx.price_currency === 'USD'
+                            ? tx.total * exchangeRate
+                            : tx.total
+                        )}
+                      </span>
                       {txPL !== null && (
                         <span className={`detail-tx-pl ${isTxPLPositive ? 'positive' : 'negative'}`}>
                           {isTxPLPositive ? '+' : ''}{formatCurrency(txPL)}

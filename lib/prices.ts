@@ -81,8 +81,7 @@ export async function getCryptoPrices(ids: string[]): Promise<Record<string, Pri
   try {
     const idsParam = uncachedIds.join(',');
     const res = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${idsParam}&vs_currencies=idr,usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`,
-      { next: { revalidate: 60 } }
+      `/api/crypto-price?ids=${idsParam}&vs_currencies=idr,usd&include_24hr_change=true`
     );
     const data = await res.json();
 

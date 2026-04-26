@@ -32,9 +32,13 @@ function calcSellPL(sell: Transaction, allTx: Transaction[]): number {
 
 export default function TransactionsPage() {
   const { transactions, holdings } = usePortfolio();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, exchangeRate } = useCurrency();
   const { t } = useLanguage();
   const router = useRouter();
+
+  /** Normalize a USD amount to IDR so formatCurrency can handle the toggle */
+  const toIDR = (amount: number, currency: string): number =>
+    currency === 'USD' ? amount * exchangeRate : amount;
 
   const [filterAction, setFilterAction] = useState<FilterAction>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,12 +76,13 @@ export default function TransactionsPage() {
   );
 
   // Summary calculations (always from full transactions, not filtered)
+  // Convert all amounts to IDR for consistent summing
   const summary = useMemo(() => {
     const buyTxs = transactions.filter((tx) => tx.action === 'buy');
     const sellTxs = transactions.filter((tx) => tx.action === 'sell');
 
-    const totalBuy = buyTxs.reduce((s, tx) => s + tx.total, 0);
-    const totalSell = sellTxs.reduce((s, tx) => s + tx.total, 0);
+    const totalBuy = buyTxs.reduce((s, tx) => s + toIDR(tx.total, tx.price_currency), 0);
+    const totalSell = sellTxs.reduce((s, tx) => s + toIDR(tx.total, tx.price_currency), 0);
     const totalRealizedPL = sellTxs.reduce(
       (s, tx) => s + calcSellPL(tx, transactions), 0
     );
@@ -86,7 +91,7 @@ export default function TransactionsPage() {
     const uniqueAssets = new Set(transactions.map((tx) => `${tx.ticker}:${tx.type}`));
 
     return { totalBuy, totalSell, totalRealizedPL, uniqueAssets: uniqueAssets.size, txCount: transactions.length };
-  }, [transactions]);
+  }, [transactions, exchangeRate]);
 
   // Navigate to asset history page (always works, even for sold assets)
   const handleRowClick = (tx: Transaction) => {
@@ -263,10 +268,10 @@ export default function TransactionsPage() {
                         {tx.quantity.toLocaleString('en-US', { maximumFractionDigits: 4 })}
                       </td>
                       <td className="text-right tabular">
-                        {formatCurrency(tx.price)}
+                        {formatCurrency(toIDR(tx.price, tx.price_currency))}
                       </td>
                       <td className="text-right tabular font-medium">
-                        {formatCurrency(tx.total)}
+                        {formatCurrency(toIDR(tx.total, tx.price_currency))}
                       </td>
                       <td className="text-right tabular">
                         {pl !== null ? (

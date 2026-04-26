@@ -147,6 +147,24 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}>
           <nav className="mobile-menu" onClick={(e) => e.stopPropagation()}>
+            {/* User Info */}
+            {user && (
+              <div className="mobile-menu-user">
+                <div className="mobile-menu-avatar">
+                  {user.email?.charAt(0).toUpperCase() || <User size={16} />}
+                </div>
+                <div className="mobile-menu-user-info">
+                  <span className="mobile-menu-user-name">
+                    {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
+                  </span>
+                  <span className="mobile-menu-user-email">{user.email}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="mobile-menu-divider" />
+
+            {/* Navigation */}
             {navKeys.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -161,6 +179,45 @@ export default function Navbar() {
                 </Link>
               );
             })}
+
+            <div className="mobile-menu-divider" />
+
+            {/* Settings */}
+            <div className="mobile-menu-settings">
+              <span className="mobile-menu-settings-label">{t('nav.language')}</span>
+              <button
+                onClick={toggleLanguage}
+                className="currency-toggle-btn"
+                id="lang-toggle-menu"
+              >
+                <span className={`currency-option ${lang === 'id' ? 'active' : ''}`}>ID</span>
+                <span className={`currency-option ${lang === 'en' ? 'active' : ''}`}>EN</span>
+              </button>
+            </div>
+            <div className="mobile-menu-settings">
+              <span className="mobile-menu-settings-label">{t('nav.currency')}</span>
+              <button
+                onClick={toggleCurrency}
+                className="currency-toggle-btn"
+                id="currency-toggle-menu"
+              >
+                <span className={`currency-option ${currency === 'IDR' ? 'active' : ''}`}>IDR</span>
+                <span className={`currency-option ${currency === 'USD' ? 'active' : ''}`}>USD</span>
+              </button>
+            </div>
+
+            {/* Spacer + Logout */}
+            <div className="mobile-menu-spacer" />
+            {!isDemo && user && (
+              <button
+                onClick={() => { signOut(); setMobileMenuOpen(false); }}
+                className="mobile-menu-logout"
+                id="logout-btn-mobile"
+              >
+                <LogOut size={16} />
+                <span>{t('nav.signout')}</span>
+              </button>
+            )}
           </nav>
         </div>
       )}

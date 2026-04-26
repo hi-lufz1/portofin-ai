@@ -25,7 +25,7 @@ export default function AssetHistoryPage() {
   const params = useParams();
   const router = useRouter();
   const { transactions, holdings, loading } = usePortfolio();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, exchangeRate } = useCurrency();
   const { t } = useLanguage();
 
   const ticker = decodeURIComponent(params.ticker as string);
@@ -77,9 +77,15 @@ export default function AssetHistoryPage() {
     const sells = assetTransactions.filter((tx) => tx.action === 'sell');
 
     const totalBuyQty = buys.reduce((s, tx) => s + tx.quantity, 0);
-    const totalBuyCost = buys.reduce((s, tx) => s + tx.total, 0);
+    const totalBuyCost = buys.reduce((s, tx) => {
+      const totalIDR = tx.price_currency === 'USD' ? tx.total * exchangeRate : tx.total;
+      return s + totalIDR;
+    }, 0);
     const totalSellQty = sells.reduce((s, tx) => s + tx.quantity, 0);
-    const totalSellRevenue = sells.reduce((s, tx) => s + tx.total, 0);
+    const totalSellRevenue = sells.reduce((s, tx) => {
+      const totalIDR = tx.price_currency === 'USD' ? tx.total * exchangeRate : tx.total;
+      return s + totalIDR;
+    }, 0);
 
     const avgBuyPrice = totalBuyQty > 0 ? totalBuyCost / totalBuyQty : 0;
     const avgSellPrice = totalSellQty > 0 ? totalSellRevenue / totalSellQty : 0;
@@ -117,7 +123,7 @@ export default function AssetHistoryPage() {
       firstDate,
       lastDate,
     };
-  }, [assetTransactions]);
+  }, [assetTransactions, exchangeRate]);
 
   const isStock = type === 'stock';
 
@@ -363,13 +369,22 @@ export default function AssetHistoryPage() {
                             : tx.quantity.toLocaleString('en-US', { maximumFractionDigits: 6 })}
                         </span>
                         <span className="detail-tx-price">
-                          @ {formatCurrency(tx.price)}
-                          {tx.price_currency === 'USD' ? ' USD' : ''}
+                          @ {formatCurrency(
+                            tx.price_currency === 'USD'
+                              ? tx.price * exchangeRate
+                              : tx.price
+                          )}
                         </span>
                       </div>
                     </div>
                     <div className="detail-tx-right">
-                      <span className="detail-tx-total">{formatCurrency(tx.total)}</span>
+                      <span className="detail-tx-total">
+                        {formatCurrency(
+                          tx.price_currency === 'USD'
+                            ? tx.total * exchangeRate
+                            : tx.total
+                        )}
+                      </span>
                       {txPL !== null && (
                         <span className={`detail-tx-pl ${isTxPLPositive ? 'positive' : 'negative'}`}>
                           {isTxPLPositive ? '+' : ''}{formatCurrency(txPL)}
