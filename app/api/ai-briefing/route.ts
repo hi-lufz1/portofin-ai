@@ -108,7 +108,7 @@ CRITICAL: Emphasize investor responsibility for independent verification.`;
         'X-Title': 'Portofin AI Briefing',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-001',
+        model: 'openai/gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Generate briefing for this portfolio:\n\n${portfolioContext}\n\nRemember: Educational analysis only, not financial advice.` },

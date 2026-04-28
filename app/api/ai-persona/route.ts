@@ -52,7 +52,7 @@ Ensure the 'biases' array contains exactly 2 or 3 items. Output ONLY valid JSON,
         'X-Title': 'Portofin AI Persona',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-001',
+        model: 'openai/gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Analyze my portfolio and generate my persona:\n\n${portfolioContext}` },

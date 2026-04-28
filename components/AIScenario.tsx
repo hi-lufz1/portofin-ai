@@ -32,20 +32,32 @@ export default function AIScenario({ portfolioContext = '', lang = 'en' }: Props
   return (
     <div className={styles.container}>
       <div className={styles.header}><strong>{lang === 'id' ? 'Simulasi Rebalancing' : 'Rebalance Simulator'}</strong></div>
-      <div className={styles.sliders}>
-        <label className={styles.sliderRow}>
-          <span>Crypto: {crypto}%</span>
-          <input type="range" min="0" max="100" step="5" value={crypto} onChange={(e) => setCrypto(Number(e.target.value))} />
-        </label>
-        <label className={styles.sliderRow}>
-          <span>Stocks: {100 - crypto}%</span>
-          <input type="range" min="0" max="100" step="5" value={100 - crypto} readOnly />
-        </label>
+      <div className={styles.allocationControl}>
+        <div className={styles.allocationLabels}>
+          <div className={styles.allocLabel}>
+            <span className={styles.allocName}>Crypto</span>
+            <span className={styles.allocValue}>{crypto}%</span>
+          </div>
+          <div className={styles.allocLabel} style={{ textAlign: 'right' }}>
+            <span className={styles.allocName}>Stocks</span>
+            <span className={styles.allocValue}>{100 - crypto}%</span>
+          </div>
+        </div>
+        <input 
+          type="range" 
+          min="0" 
+          max="100" 
+          step="5" 
+          value={crypto} 
+          onChange={(e) => setCrypto(Number(e.target.value))} 
+          className={styles.singleSlider}
+          style={{ background: `linear-gradient(90deg, var(--indigo) ${crypto}%, var(--border) ${crypto}%)` }}
+        />
       </div>
       <div className={styles.actions}>
         <button onClick={simulate} className={styles.simulateBtn} disabled={loading}>{loading ? (lang === 'id' ? 'Menyimulasikan...' : 'Simulating...') : (lang === 'id' ? 'Jalankan Simulasi' : 'Run Simulation')}</button>
       </div>
-      {result && <pre className={styles.resultBox}>{result}</pre>}
+      {result && <div className={styles.resultBox}>{result}</div>}
     </div>
   );
 }

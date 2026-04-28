@@ -58,9 +58,9 @@ export default function AIChat({ portfolioContext = '', lang = 'en' }: Props) {
   };
 
   const presets = [
-    { label: lang === 'id' ? 'Narratif portofolio singkat' : 'Short portfolio narrative', prompt: lang === 'id' ? 'Buat narasi portofolio singkat (2-3 kalimat) yang menjelaskan posisi saat ini dan fokus jangka panjang.' : 'Create a short portfolio narrative (2-3 sentences) explaining current position and long-term focus.' },
-    { label: lang === 'id' ? 'Saran rebalancing konservatif' : 'Conservative rebalance suggestion', prompt: lang === 'id' ? 'Berikan saran rebalancing konservatif (kurangi risiko), dalam 3 langkah yang mudah diikuti.' : 'Provide a conservative rebalancing suggestion (reduce risk), in 3 actionable steps.' },
-    { label: lang === 'id' ? 'Risiko utama' : 'Top risks', prompt: lang === 'id' ? 'Sorot 3 risiko utama dalam portofolio saya berdasarkan data yang tersedia.' : 'Highlight the top 3 risks in my portfolio based on the provided data.' },
+    { label: lang === 'id' ? 'Efek inflasi pada portofolio' : 'Inflation effect on portfolio', prompt: lang === 'id' ? 'Berdasarkan aset saya saat ini, bagaimana kemungkinan efek dari inflasi yang tinggi terhadap portofolio saya?' : 'Based on my current assets, what is the likely effect of high inflation on my portfolio?' },
+    { label: lang === 'id' ? 'Simulasi: Bitcoin naik 20%' : 'Simulate: Bitcoin rises 20%', prompt: lang === 'id' ? 'Tolong simulasikan apa yang terjadi pada total nilai portofolio saya jika harga Bitcoin tiba-tiba naik 20%, asumsikan aset lain tetap.' : 'Please simulate what happens to my total portfolio value if Bitcoin suddenly rises 20%, assuming other assets stay the same.' },
+    { label: lang === 'id' ? 'Korelasi antar aset' : 'Correlation between assets', prompt: lang === 'id' ? 'Apakah ada aset dalam portofolio saya yang memiliki korelasi terlalu kuat sehingga membahayakan diversifikasi?' : 'Are there any assets in my portfolio that are too strongly correlated, risking my diversification?' },
   ];
 
   return (
