@@ -81,8 +81,23 @@ export async function getCryptoPrices(ids: string[]): Promise<Record<string, Pri
   try {
     const idsParam = uncachedIds.join(',');
     const res = await fetch(
-      `/api/crypto-price?ids=${idsParam}&vs_currencies=idr,usd&include_24hr_change=true`
+      `/api/crypto-price?ids=${encodeURIComponent(idsParam)}&vs_currencies=idr,usd&include_24hr_change=true`
     );
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      console.error(`Crypto price proxy returned ${res.status}:`, text);
+      // Skip processing uncached ids to avoid corrupt data
+      return result;
+    }
+
+    if (!contentType.includes('application/json')) {
+      const text = await res.text().catch(() => '');
+      console.error('Crypto price proxy returned non-JSON response:', text);
+      return result;
+    }
+
     const data = await res.json();
 
     for (const id of uncachedIds) {
@@ -123,7 +138,17 @@ export async function getStockPrices(tickers: string[]): Promise<Record<string, 
 
     try {
       const res = await fetch(`/api/stock-price?ticker=${encodeURIComponent(ticker)}`);
-      if (!res.ok) continue;
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.error(`Stock price proxy returned ${res.status}:`, text);
+        continue;
+      }
+      if (!contentType.includes('application/json')) {
+        const text = await res.text().catch(() => '');
+        console.error('Stock price proxy returned non-JSON response:', text);
+        continue;
+      }
 
       const data = await res.json();
       const meta = data.chart?.result?.[0]?.meta;

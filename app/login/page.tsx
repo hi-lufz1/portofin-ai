@@ -77,25 +77,25 @@ export default function LoginPage() {
       <div className="login-brand-panel">
         <div className="login-brand-content">
           <div className="login-logo">
-            <TrendingUp size={28} strokeWidth={2.5} />
+            <img src="/logo.png" alt="Portofin" width={32} height={32} style={{ borderRadius: 6 }} />
           </div>
           <h1 className="login-brand-title">Portofin</h1>
           <p className="login-brand-subtitle">
-            Pantau portofolio saham &amp; crypto kamu dengan harga real-time
+            Pantau portofolio saham &amp; crypto kamu dengan AI-powered insights dan harga real-time
           </p>
 
           <div className="login-features">
             <div className="login-feature">
-              <div className="login-feature-dot" />
-              <span>Harga saham real-time</span>
+              <div className="login-feature-dot ai" />
+              <span>AI Portfolio Advisor — analisis cerdas</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />
-              <span>Tracking crypto real-time</span>
+              <span>Harga saham &amp; crypto real-time</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />
-              <span>Dukungan multi mata uang (IDR &amp; USD)</span>
+              <span>Multi mata uang (IDR &amp; USD)</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />
@@ -115,7 +115,7 @@ export default function LoginPage() {
           {/* Mobile Branding Header — only visible on mobile */}
           <div className="login-mobile-brand" id="login-mobile-brand">
             <div className="login-mobile-logo">
-              <TrendingUp size={22} strokeWidth={2.5} />
+              <img src="/logo.png" alt="Portofin" width={22} height={22} style={{ borderRadius: 4 }} />
             </div>
             <span className="login-mobile-brand-text">Portofin</span>
           </div>

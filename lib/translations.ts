@@ -184,4 +184,18 @@ export const translations: Record<string, Record<Language, string>> = {
   // Asset Detail Enhanced
   'detail.notFoundHint': { id: 'Aset ini mungkin sudah terjual atau dihapus. Kamu masih bisa melihat riwayat transaksinya.', en: 'This asset may have been sold or deleted. You can still view its transaction history.' },
   'detail.viewHistory': { id: 'Lihat Riwayat', en: 'View History' },
+
+  // AI Advisor
+  'nav.aiAdvisor': { id: 'AI Advisor', en: 'AI Advisor' },
+  'ai.title': { id: 'AI Advisor', en: 'AI Advisor' },
+  'ai.subtitle': { id: 'Konsultan portofolio cerdas berbasis AI', en: 'AI-powered intelligent portfolio consultant' },
+  'ai.clearChat': { id: 'Hapus Chat', en: 'Clear Chat' },
+  'ai.emptyTitle': { id: 'Halo! Saya Portofin AI 👋', en: 'Hello! I\'m Portofin AI 👋' },
+  'ai.emptyDesc': { id: 'Saya bisa menganalisis portofolio kamu, memberikan insight investasi, dan membantu strategi. Pilih pertanyaan di bawah atau ketik sendiri!', en: 'I can analyze your portfolio, provide investment insights, and help with strategy. Pick a question below or type your own!' },
+  'ai.inputPlaceholder': { id: 'Tanya tentang portofolio kamu...', en: 'Ask about your portfolio...' },
+  'ai.disclaimer': { id: '⚠️ AI Advisor bukan saran finansial profesional. Selalu lakukan riset mandiri.', en: '⚠️ AI Advisor is not professional financial advice. Always do your own research.' },
+  'ai.insightsTitle': { id: 'AI Insights', en: 'AI Insights' },
+  'ai.refresh': { id: 'Refresh insights', en: 'Refresh insights' },
+  'ai.insightsEmpty': { id: 'Klik refresh untuk mendapatkan insight AI', en: 'Click refresh to get AI insights' },
+  'ai.chatCta': { id: 'Chat dengan AI Advisor', en: 'Chat with AI Advisor' },
 };

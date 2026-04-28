@@ -4,6 +4,8 @@ import { useState } from 'react';
 import PortfolioSummaryCards from '@/components/PortfolioSummary';
 import HoldingsTable from '@/components/HoldingsTable';
 import AllocationChart from '@/components/AllocationChart';
+import AIInsightsCard from '@/components/AIInsightsCard';
+import AIBriefing from '@/components/AIBriefing';
 import AddAssetModal from '@/components/AddAssetModal';
 import PortfolioSelector from '@/components/PortfolioSelector';
 import { Plus, RefreshCw } from 'lucide-react';
@@ -35,6 +37,10 @@ export default function DashboardPage() {
 
       <PortfolioSelector />
 
+      {/* AI Briefing - Hero Section */}
+      <AIBriefing />
+
+      {/* Summary Cards */}
       <PortfolioSummaryCards />
 
       <div className="dashboard-grid">
@@ -42,6 +48,7 @@ export default function DashboardPage() {
           <HoldingsTable />
         </div>
         <div className="dashboard-sidebar">
+          <AIInsightsCard />
           <AllocationChart />
         </div>
       </div>
@@ -50,3 +57,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

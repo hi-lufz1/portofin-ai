@@ -14,8 +14,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Portofin — Portfolio Tracker",
-  description: "Track your IDX stocks & crypto portfolio with real-time prices in IDR and USD",
+  title: "Portofin — AI-Powered Portfolio Tracker",
+  description: "Track your IDX stocks & crypto portfolio with AI-powered insights, real-time prices, and intelligent analysis in IDR and USD",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

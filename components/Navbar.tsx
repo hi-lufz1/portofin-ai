@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import {
   LayoutDashboard,
   ArrowLeftRight,
+  Sparkles,
   Menu,
   X,
   TrendingUp,
@@ -19,6 +20,7 @@ import {
 
 const navKeys = [
   { href: '/dashboard', labelKey: 'nav.portfolio', icon: LayoutDashboard },
+  { href: '/ai-advisor', labelKey: 'nav.aiAdvisor', icon: Sparkles },
   { href: '/transactions', labelKey: 'nav.transactions', icon: ArrowLeftRight },
 ];
 
@@ -35,7 +37,7 @@ export default function Navbar() {
       <aside className="sidebar" id="sidebar-nav">
         <div className="sidebar-brand">
           <div className="sidebar-logo">
-            <TrendingUp size={20} strokeWidth={2.5} />
+            <img src="/logo.png" alt="Portofin" width={20} height={20} style={{ borderRadius: 4 }} />
           </div>
           <span className="sidebar-brand-text">Portofin</span>
         </div>
@@ -111,7 +113,7 @@ export default function Navbar() {
           </button>
           <div className="mobile-brand">
             <div className="sidebar-logo small">
-              <TrendingUp size={16} strokeWidth={2.5} />
+              <img src="/logo.png" alt="Portofin" width={16} height={16} style={{ borderRadius: 3 }} />
             </div>
             <span className="mobile-brand-text">Portofin</span>
           </div>
