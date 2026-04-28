@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://portofin.vercel.app',
+        'HTTP-Referer': 'https://portofin-opal.vercel.app',
         'X-Title': 'Portofin AI Advisor',
       },
       body: JSON.stringify({
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       const errorData = await response.text();
       console.error('OpenRouter API error:', response.status, errorData);
-      
+
       // Return more helpful error messages
       if (response.status === 401 || response.status === 403) {
         return NextResponse.json(
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
           { status: 429 }
         );
       }
-      
+
       return NextResponse.json(
         { error: 'AI service temporarily unavailable. Please try again.' },
         { status: 502 }

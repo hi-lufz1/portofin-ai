@@ -104,7 +104,7 @@ CRITICAL: Emphasize investor responsibility for independent verification.`;
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://portofin.vercel.app',
+        'HTTP-Referer': 'https://portofin-opal.vercel.app',
         'X-Title': 'Portofin AI Briefing',
       },
       body: JSON.stringify({
@@ -121,14 +121,14 @@ CRITICAL: Emphasize investor responsibility for independent verification.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenRouter API error:', response.status, errorText);
-      
+
       if (response.status === 401 || response.status === 403) {
         return NextResponse.json(
           { error: 'AI configuration error - check API key' },
           { status: 401 }
         );
       }
-      
+
       return NextResponse.json(
         { error: 'AI service temporarily unavailable' },
         { status: 502 }
@@ -146,14 +146,14 @@ CRITICAL: Emphasize investor responsibility for independent verification.`;
 
     try {
       const briefing = JSON.parse(cleanedContent) as Briefing;
-      
+
       // Ensure disclaimer is present
       if (!briefing.disclaimer) {
         briefing.disclaimer = lang === 'id'
           ? '⚠️ DISCLAIMER: Ini adalah analisis AI untuk tujuan edukasi saja, BUKAN saran investasi profesional. Lakukan riset independen sebelum membuat keputusan. Performa masa lalu bukan jaminan hasil masa depan. Konsultasi dengan penasihat keuangan berlisensi sebelum bertransaksi.'
           : '⚠️ DISCLAIMER: This is AI analysis for educational purposes only, NOT professional investment advice. Conduct independent research before making decisions. Past performance does not guarantee future results. Consult a licensed financial advisor before trading.';
       }
-      
+
       return NextResponse.json({ briefing });
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError, 'Content:', cleanedContent);

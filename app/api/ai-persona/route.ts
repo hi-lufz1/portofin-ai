@@ -48,7 +48,7 @@ Ensure the 'biases' array contains exactly 2 or 3 items. Output ONLY valid JSON,
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://portofin.vercel.app',
+        'HTTP-Referer': 'https://portofin-opal.vercel.app',
         'X-Title': 'Portofin AI Persona',
       },
       body: JSON.stringify({
