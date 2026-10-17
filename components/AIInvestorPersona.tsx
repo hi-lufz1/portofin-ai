@@ -81,7 +81,7 @@ export default function AIInvestorPersona({ portfolioContext, lang }: Props) {
 
         {loading && !data && (
           <div className={styles.empty}>
-            <Loader2 size={24} className={styles.spin} style={{ margin: '0 auto 12px', color: '#A855F7' }} />
+            <Loader2 size={24} className={styles.spin} style={{ margin: '0 auto 12px', color: 'var(--accent)' }} />
             <p>{lang === 'id' ? 'AI sedang menganalisis pola investasimu...' : 'AI is analyzing your investment patterns...'}</p>
           </div>
         )}
@@ -89,7 +89,9 @@ export default function AIInvestorPersona({ portfolioContext, lang }: Props) {
         {data && (
           <>
             <div className={styles.personaCard}>
-              <div className={styles.personaIcon}>{data.icon || '🧑‍💻'}</div>
+              <div className={styles.personaBadge}>
+                {lang === 'id' ? 'PROFIL INVESTOR' : 'INVESTOR PROFILE'}
+              </div>
               <h3 className={styles.personaTitle}>{data.personaTitle}</h3>
               <p className={styles.personaDesc}>{data.description}</p>
             </div>
@@ -110,8 +112,8 @@ export default function AIInvestorPersona({ portfolioContext, lang }: Props) {
 
             <div className={styles.disclaimer}>
               {lang === 'id' 
-                ? '⚠️ Ini adalah analisis perilaku untuk hiburan dan refleksi diri. Bukan saran investasi finansial.' 
-                : '⚠️ This is a behavioral analysis for entertainment and self-reflection. Not financial investment advice.'}
+                ? 'Ini adalah analisis perilaku untuk refleksi diri. Bukan saran investasi finansial.' 
+                : 'This is a behavioral analysis for self-reflection. Not financial investment advice.'}
             </div>
           </>
         )}

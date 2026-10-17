@@ -12,7 +12,7 @@ type Msg = { id: string; role: 'user' | 'assistant' | 'system'; content: string 
 
 export default function AIChat({ portfolioContext = '', lang = 'en' }: Props) {
   const [messages, setMessages] = useState<Msg[]>([
-    { id: 'm0', role: 'assistant', content: lang === 'id' ? 'Halo! Saya Portofin AI. Tanyakan sesuatu tentang portofoliomu — misal: "Apa risiko terbesar saya?"' : 'Hello! I am Portofin AI. Ask something about your portfolio — e.g. "What is my biggest risk?"' }
+    { id: 'm0', role: 'assistant', content: lang === 'id' ? 'Halo! Saya Portofin AI. Tanyakan sesuatu tentang portofoliomu, misalnya: "Apa risiko terbesar saya?"' : 'Hello! I am Portofin AI. Ask something about your portfolio, e.g. "What is my biggest risk?"' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

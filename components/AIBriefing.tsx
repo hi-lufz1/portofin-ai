@@ -188,7 +188,6 @@ export default function AIBriefing() {
               <div className="ai-briefing-items">
                 {briefing.topRisks.map((risk, idx) => (
                   <div key={idx} className="ai-briefing-item risk">
-                    <span className="ai-briefing-item-icon">{risk.icon}</span>
                     <div className="ai-briefing-item-content">
                       <span className="ai-briefing-item-title">{risk.title}</span>
                       <span className="ai-briefing-item-desc">{risk.description}</span>
@@ -207,7 +206,6 @@ export default function AIBriefing() {
               <div className="ai-briefing-items">
                 {briefing.topOpportunities.map((opp, idx) => (
                   <div key={idx} className="ai-briefing-item opportunity">
-                    <span className="ai-briefing-item-icon">{opp.icon}</span>
                     <div className="ai-briefing-item-content">
                       <span className="ai-briefing-item-title">{opp.title}</span>
                       <span className="ai-briefing-item-desc">{opp.description}</span>
@@ -231,7 +229,6 @@ export default function AIBriefing() {
                     <div className="ai-briefing-pred-header">
                       <span className="ai-briefing-pred-timeframe">{pred.timeframe}</span>
                       <span className={`ai-briefing-pred-confidence ${pred.confidence}`}>
-                        {pred.confidence === 'high' ? '🎯' : pred.confidence === 'medium' ? '💭' : '❓'}{' '}
                         {pred.confidence}
                       </span>
                     </div>
@@ -253,7 +250,6 @@ export default function AIBriefing() {
                 {briefing.recommendations.map((rec, idx) => (
                   <div key={idx} className={`ai-briefing-recommendation ${rec.priority}`}>
                     <div className="ai-briefing-rec-priority">
-                      {rec.priority === 'high' ? '🔴' : rec.priority === 'medium' ? '🟡' : '🟢'}
                       <span>{rec.priority.toUpperCase()}</span>
                     </div>
                     <div className="ai-briefing-rec-content">

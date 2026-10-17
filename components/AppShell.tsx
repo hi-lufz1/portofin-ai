@@ -1,35 +1,34 @@
 'use client';
 
+import React, { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
+import AuthModal from '@/components/AuthModal';
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { loading } = useAuth();
 
-  const isLoginPage = pathname === '/login';
-
-  // Login page gets its own full-screen layout
-  if (isLoginPage) {
+  if (pathname === '/login') {
     return <>{children}</>;
   }
 
-  // Show loading spinner while checking auth
   if (loading) {
     return (
-      <div className="app-loading">
-        <div className="app-loading-spinner" />
-        <span>Loading...</span>
+      <div className="auth-loading">
+        <div className="auth-spinner" />
       </div>
     );
   }
 
-  // Authenticated layout with sidebar
   return (
     <div className="app-shell">
       <Navbar />
-      <main className="main-content">{children}</main>
+      <main className="main-content">
+        {children}
+      </main>
+      <AuthModal />
     </div>
   );
 }

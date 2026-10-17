@@ -109,7 +109,7 @@ export default function TransactionTable() {
                     <td className="text-right tabular font-medium">
                       {formatCurrency(toIDR(tx.total, tx.price_currency))}
                     </td>
-                    <td className="tx-note">{tx.note || '—'}</td>
+                    <td className="tx-note">{tx.note || '-'}</td>
                   </tr>
                 );
               })

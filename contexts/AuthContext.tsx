@@ -1,107 +1,112 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import { useRouter, usePathname } from 'next/navigation';
-import type { User } from '@supabase/supabase-js';
+
+const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
+const DEMO_USER = {
+  id: '00000000-0000-0000-0000-000000000000',
+  email: 'demo@portofin.app',
+  app_metadata: {},
+  user_metadata: { full_name: 'Demo User' },
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+} as unknown as User;
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isGuest: boolean;
   isDemo: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signInWithGoogle: () => Promise<{ error: string | null }>;
+  isAuthModalOpen: boolean;
+  authModalReason: string | null;
+  openAuthModal: (reason?: string) => void;
+  closeAuthModal: () => void;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const PUBLIC_PATHS = ['/login'];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const isDemo = !isSupabaseConfigured;
+  const [user, setUser] = useState<User | null>(isDemo ? DEMO_USER : null);
+  const [loading, setLoading] = useState(!isDemo);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalReason, setAuthModalReason] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
-  // Listen for auth state changes
-  useEffect(() => {
-    if (isDemo) {
-      // Demo mode — skip auth, allow everything
-      setLoading(false);
-      return;
-    }
+  const openAuthModal = useCallback((reason?: string) => {
+    setAuthModalReason(reason || null);
+    setIsAuthModalOpen(true);
+  }, []);
 
-    // Get initial session
+  const closeAuthModal = useCallback(() => {
+    setIsAuthModalOpen(false);
+    setAuthModalReason(null);
+  }, []);
+
+  useEffect(() => {
+    if (isDemo) return;
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      setLoading(false);
+      if (nextUser) {
+        setIsAuthModalOpen(false);
+        setAuthModalReason(null);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, [isDemo]);
+  }, []);
 
-  // Redirect logic
   useEffect(() => {
-    if (loading) return;
-    if (isDemo) return; // demo mode = no redirects
-
-    const isPublic = PUBLIC_PATHS.includes(pathname);
-
-    if (!user && !isPublic) {
-      router.replace('/login');
-    } else if (user && isPublic) {
+    if (loading || isDemo) return;
+    const isLoginPage = pathname === '/login';
+    if (user && isLoginPage) {
       router.replace('/dashboard');
     }
-  }, [user, loading, pathname, router, isDemo]);
+  }, [user, loading, pathname, router]);
 
-  const signUp = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) return { error: error.message };
-    return { error: null };
-  }, []);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
-    return { error: null };
-  }, []);
-
-  const signInWithGoogle = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-    if (error) return { error: error.message };
-    return { error: null };
-  }, []);
-
-  const signOut = useCallback(async () => {
+  const signOut = async () => {
+    if (isDemo) return;
     await supabase.auth.signOut();
     setUser(null);
-    router.replace('/login');
-  }, [router]);
+    router.push('/dashboard');
+  };
+
+  const isGuest = !loading && !user;
 
   return (
-    <AuthContext.Provider value={{ user, loading, isDemo, signUp, signIn, signInWithGoogle, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        isGuest,
+        isDemo,
+        isAuthModalOpen,
+        authModalReason,
+        openAuthModal,
+        closeAuthModal,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }

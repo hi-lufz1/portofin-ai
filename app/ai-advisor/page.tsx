@@ -112,14 +112,14 @@ export default function AIPortfolioPage() {
   }, [portfolioLoading, holdings, summary, lang]);
 
   const getRiskColor = (score: number) => {
-    if (score < 30) return 'var(--green)';
-    if (score < 60) return '#F59E0B';
+    if (score < 30) return 'var(--green-text)';
+    if (score < 60) return 'var(--amber)';
     return 'var(--red)';
   };
 
   const getDivColor = (score: number) => {
-    if (score > 70) return 'var(--green)';
-    if (score > 40) return '#F59E0B';
+    if (score > 70) return 'var(--green-text)';
+    if (score > 40) return 'var(--amber)';
     return 'var(--red)';
   };
 
@@ -239,7 +239,7 @@ export default function AIPortfolioPage() {
                   <span className="ai-perf-pct positive">{analysis.topPerformer.pct}</span>
                 </div>
               ) : (
-                <span className="ai-perf-na">—</span>
+                <span className="ai-perf-na">N/A</span>
               )}
             </div>
 
@@ -258,7 +258,7 @@ export default function AIPortfolioPage() {
                   </span>
                 </div>
               ) : (
-                <span className="ai-perf-na">—</span>
+                <span className="ai-perf-na">N/A</span>
               )}
             </div>
           </div>
@@ -295,8 +295,8 @@ export default function AIPortfolioPage() {
                             style={{
                               width: `${weight}%`,
                               background: h.type === 'crypto'
-                                ? 'linear-gradient(90deg, var(--indigo), #818CF8)'
-                                : 'linear-gradient(90deg, var(--primary), #334155)',
+                                ? 'var(--accent)'
+                                : 'var(--primary)',
                             }}
                           />
                         </div>

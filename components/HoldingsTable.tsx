@@ -1,195 +1,305 @@
 'use client';
 
-import { useState } from 'react';
-import { useCurrency } from '@/contexts/CurrencyContext';
-import { usePortfolio } from '@/contexts/PortfolioContext';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { TrendingUp, TrendingDown, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { usePortfolio } from '@/contexts/PortfolioContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatCurrency, formatPercent, formatQuantity } from '@/lib/currency';
+import { HoldingWithMarketData } from '@/types';
+import { ArrowUpDown, TrendingUp, TrendingDown, ChevronRight, Sparkles } from 'lucide-react';
 
-// Crypto icon mapping
-const cryptoIcons: Record<string, string> = {
-  bitcoin: '₿',
-  ethereum: 'Ξ',
-  solana: 'S',
-  cardano: '₳',
-  polkadot: '●',
-  ripple: '✕',
-};
+type SortKey = 'name' | 'current_value' | 'unrealized_pl_pct' | 'change_24h_pct' | 'allocation_pct';
 
-function getAssetIcon(ticker: string, type: string) {
-  if (type === 'crypto') {
-    return cryptoIcons[ticker] || ticker.charAt(0).toUpperCase();
-  }
-  return ticker.substring(0, 2);
+interface Props {
+  onAddClick: () => void;
 }
 
-function getAssetColor(ticker: string, type: string): string {
-  if (type === 'crypto') {
-    const colors: Record<string, string> = {
-      bitcoin: '#F7931A',
-      ethereum: '#627EEA',
-      solana: '#9945FF',
-      cardano: '#0033AD',
-      polkadot: '#E6007A',
-      ripple: '#23292F',
-    };
-    return colors[ticker] || '#6366f1';
-  }
-  const stockColors: Record<string, string> = {
-    BBCA: '#003D79', BBRI: '#00529C', BMRI: '#003366', BBNI: '#F15A22',
-    TLKM: '#E31937', ASII: '#003399', GOTO: '#00AA13', BUKA: '#E31C5F', ANTM: '#1A5276',
-  };
-  return stockColors[ticker] || '#475569';
-}
-
-export default function HoldingsTable() {
-  const { holdings, loading } = usePortfolio();
-  const { formatCurrency } = useCurrency();
-  const { t } = useLanguage();
+export default function HoldingsTable({ onAddClick }: Props) {
   const router = useRouter();
-  const [filter, setFilter] = useState<'all' | 'crypto' | 'stock'>('all');
+  const { holdings, loading, seedSamplePortfolio } = usePortfolio();
+  const { isGuest } = useAuth();
+  const { currency } = useCurrency();
+  const { t } = useLanguage();
+  const [sortKey, setSortKey] = useState<SortKey>('current_value');
+  const [sortAsc, setSortAsc] = useState(false);
+  const [filterType, setFilterType] = useState<'all' | 'stock' | 'crypto'>('all');
 
-  const filtered = filter === 'all'
-    ? holdings
-    : holdings.filter((h) => h.type === filter);
-
-  const sorted = [...filtered].sort((a, b) => b.current_value - a.current_value);
-
-  const handleRowClick = (holdingId: string) => {
-    router.push(`/dashboard/asset/${holdingId}`);
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortKey(key);
+      setSortAsc(false);
+    }
   };
+
+  const filtered = holdings.filter(h => filterType === 'all' || h.asset_type === filterType);
+
+  const sorted = [...filtered].sort((a, b) => {
+    const mul = sortAsc ? 1 : -1;
+    if (sortKey === 'name') return mul * a.name.localeCompare(b.name);
+    return mul * ((a[sortKey] as number) - (b[sortKey] as number));
+  });
+
+  if (loading && holdings.length === 0) {
+    return (
+      <div className="holdings-card">
+        <div className="holdings-header">
+          <h2 className="section-title">{t('holdings.title')}</h2>
+        </div>
+        <div className="holdings-empty">
+          <div className="loading-pulse">{t('holdings.loading')}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="holdings-section" id="holdings-section">
+    <div className="holdings-card">
       <div className="holdings-header">
-        <h2 className="section-title">{t('holdings.title')}</h2>
+        <div className="holdings-title-row">
+          <h2 className="section-title">{t('holdings.title')}</h2>
+          <span className="holdings-count">{holdings.length} {t('holdings.assets')}</span>
+        </div>
         <div className="holdings-filters">
-          <button
-            className={`filter-chip ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
-            id="filter-all"
-          >
-            {t('holdings.all')}
-          </button>
-          <button
-            className={`filter-chip ${filter === 'crypto' ? 'active' : ''}`}
-            onClick={() => setFilter('crypto')}
-            id="filter-crypto"
-          >
-            {t('holdings.crypto')}
-          </button>
-          <button
-            className={`filter-chip ${filter === 'stock' ? 'active' : ''}`}
-            onClick={() => setFilter('stock')}
-            id="filter-stock"
-          >
-            {t('holdings.stocks')}
-          </button>
+          {(['all', 'stock', 'crypto'] as const).map(type => (
+            <button
+              key={type}
+              type="button"
+              className={`filter-chip ${filterType === type ? 'active' : ''}`}
+              onClick={() => setFilterType(type)}
+            >
+              {type === 'all' ? t('holdings.all') : type === 'stock' ? t('holdings.stocks') : t('holdings.crypto')}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="holdings-table-wrap">
-        <table className="holdings-table" id="holdings-table">
-          <thead>
-            <tr>
-              <th>{t('holdings.asset')}</th>
-              <th className="text-right">{t('holdings.price')}</th>
-              <th className="text-right">{t('holdings.qty')}</th>
-              <th className="text-right">{t('holdings.value')}</th>
-              <th className="text-right">{t('holdings.pl')}</th>
-              <th className="text-right">{t('holdings.change24h')}</th>
-              <th className="text-right" style={{ width: 40 }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={7} className="holdings-loading">
-                  <div className="loading-pulse" />
-                </td>
-              </tr>
-            ) : sorted.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="holdings-empty">
-                  No holdings found. Add your first asset!
-                </td>
-              </tr>
-            ) : (
-              sorted.map((holding) => {
-                const isPLPositive = holding.profit_loss >= 0;
-                const isDayPositive = (holding.price_change_24h ?? 0) >= 0;
-
-                return (
-                  <tr
-                    key={holding.id}
-                    className="holding-row clickable"
-                    id={`holding-${holding.ticker}`}
-                    onClick={() => handleRowClick(holding.id)}
-                  >
-                    <td>
-                      <div className="asset-info">
-                        <div
-                          className="asset-icon"
-                          style={{ backgroundColor: getAssetColor(holding.ticker, holding.type) }}
-                        >
-                          {getAssetIcon(holding.ticker, holding.type)}
-                        </div>
-                        <div className="asset-name-wrap">
-                          <span className="asset-name">{holding.name}</span>
-                          <span className="asset-ticker">
-                            {holding.type === 'stock' ? holding.ticker : holding.ticker.toUpperCase()}
-                            <span className="asset-type-badge">{holding.type === 'crypto' ? 'Crypto' : 'IDX'}</span>
-                            {holding.type === 'crypto' && holding.buy_price_currency && (
-                              <span className={`asset-cur-badge ${holding.buy_price_currency === 'USD' ? 'usd' : ''}`}>
-                                {holding.buy_price_currency}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="text-right tabular">
-                      {formatCurrency(holding.current_price)}
-                    </td>
-                    <td className="text-right tabular">
-                      <span className="holding-qty">
-                        {holding.type === 'crypto'
-                          ? holding.quantity.toLocaleString('en-US', { maximumFractionDigits: 4 })
-                          : holding.quantity.toLocaleString('id-ID')}
-                      </span>
-                    </td>
-                    <td className="text-right tabular font-medium">
-                      {formatCurrency(holding.current_value)}
-                    </td>
-                    <td className="text-right">
-                      <div className={`pl-cell ${isPLPositive ? 'positive' : 'negative'}`}>
-                        <span className="pl-amount">
-                          {isPLPositive ? '+' : ''}{formatCurrency(holding.profit_loss)}
-                        </span>
-                        <span className="pl-pct">
-                          {isPLPositive ? '+' : ''}{holding.profit_loss_pct.toFixed(2)}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="text-right">
-                      <span className={`change-badge ${isDayPositive ? 'positive' : 'negative'}`}>
-                        {isDayPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                        {isDayPositive ? '+' : ''}{(holding.price_change_24h ?? 0).toFixed(2)}%
-                      </span>
-                    </td>
-                    <td className="text-right">
-                      <div className="holding-chevron">
-                        <ChevronRight size={16} />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
+      {sorted.length === 0 ? (
+        <div className="holdings-empty">
+          <p className="empty-text">{t('holdings.empty')}</p>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button type="button" className="btn-primary" onClick={onAddClick}>
+              {t('holdings.addFirst')}
+            </button>
+            {isGuest && (
+              <button
+                type="button"
+                className="save-cloud-btn-secondary"
+                onClick={() => seedSamplePortfolio()}
+              >
+                <Sparkles size={14} />
+                <span>{t('guest.loadSample')}</span>
+              </button>
             )}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="holdings-table-wrap has-mobile-cards">
+            <table className="holdings-table">
+              <thead>
+                <tr>
+                  <th onClick={() => handleSort('name')} className="th-sortable">
+                    <span>{t('holdings.colAsset')}</span>
+                    <ArrowUpDown size={13} />
+                  </th>
+                  <th className="th-right">{t('holdings.colPrice')}</th>
+                  <th className="th-right">{t('holdings.colHoldings')}</th>
+                  <th onClick={() => handleSort('current_value')} className="th-sortable th-right">
+                    <span>{t('holdings.colValue')}</span>
+                    <ArrowUpDown size={13} />
+                  </th>
+                  <th onClick={() => handleSort('unrealized_pl_pct')} className="th-sortable th-right">
+                    <span>{t('holdings.colPL')}</span>
+                    <ArrowUpDown size={13} />
+                  </th>
+                  <th onClick={() => handleSort('change_24h_pct')} className="th-sortable th-right">
+                    <span>{t('holdings.col24h')}</span>
+                    <ArrowUpDown size={13} />
+                  </th>
+                  <th className="th-actions"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((h: HoldingWithMarketData) => {
+                  const isPlPos = h.unrealized_pl >= 0;
+                  const is24hPos = h.change_24h_pct >= 0;
+                  const goDetail = () => router.push(`/dashboard/asset/${h.id}`);
+
+                  return (
+                    <tr
+                      key={h.id}
+                      className="holding-row clickable"
+                      onClick={goDetail}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          goDetail();
+                        }
+                      }}
+                      tabIndex={0}
+                      role="link"
+                      aria-label={`${h.name} (${h.ticker})`}
+                    >
+                      <td className="td-asset">
+                        <div className="asset-info">
+                          <div className="asset-icon" style={{ background: getAssetColor(h.ticker) }}>
+                            {h.ticker.slice(0, 2)}
+                          </div>
+                          <div className="asset-name-wrap">
+                            <span className="asset-name">{h.name}</span>
+                            <span className="asset-ticker">
+                              {h.ticker}
+                              <span className="asset-type-badge">
+                                {h.asset_type === 'stock' ? 'IDX' : 'Crypto'}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="td-right td-mono">
+                        {formatCurrency(h.current_price, currency)}
+                      </td>
+
+                      <td className="td-right td-mono">
+                        <div className="holding-qty-cell">
+                          {h.asset_type === 'stock' ? (
+                            <>
+                              <span className="holding-qty">{Math.floor(h.quantity / 100).toLocaleString('id-ID')} lot</span>
+                              <span className="holding-avg">({h.quantity.toLocaleString('id-ID')} lbr) {t('holdings.avg')} {formatCurrency(h.avg_buy_price, currency)}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="holding-qty">{formatQuantity(h.quantity, h.asset_type)}</span>
+                              <span className="holding-avg">{t('holdings.avg')} {formatCurrency(h.avg_buy_price, currency)}</span>
+                            </>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="td-right td-mono td-bold">
+                        {formatCurrency(h.current_value, currency)}
+                      </td>
+
+                      <td className="td-right">
+                        <div className={`pl-cell ${isPlPos ? 'positive' : 'negative'}`}>
+                          <span className="pl-amount">{formatCurrency(h.unrealized_pl, currency)}</span>
+                          <span className="pl-pct">{formatPercent(h.unrealized_pl_pct)}</span>
+                        </div>
+                      </td>
+
+                      <td className="td-right">
+                        <span className={`change-badge ${is24hPos ? 'positive' : 'negative'}`}>
+                          {is24hPos ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                          {formatPercent(h.change_24h_pct)}
+                        </span>
+                      </td>
+
+                      <td className="td-actions">
+                        <span className="holding-chevron">
+                          <ChevronRight size={16} />
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card Reflow (<= 768px): preserves all 6 columns with zero hidden data */}
+          <div className="holdings-mobile-list">
+            {sorted.map((h: HoldingWithMarketData) => {
+              const isPlPos = h.unrealized_pl >= 0;
+              const is24hPos = h.change_24h_pct >= 0;
+              const goDetail = () => router.push(`/dashboard/asset/${h.id}`);
+
+              return (
+                <div
+                  key={h.id}
+                  className="holding-mobile-card"
+                  onClick={goDetail}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      goDetail();
+                    }
+                  }}
+                  tabIndex={0}
+                  role="link"
+                  aria-label={`${h.name} (${h.ticker})`}
+                >
+                  <div className="holding-mobile-top">
+                    <div className="asset-info">
+                      <div className="asset-icon" style={{ background: getAssetColor(h.ticker) }}>
+                        {h.ticker.slice(0, 2)}
+                      </div>
+                      <div className="asset-name-wrap">
+                        <span className="asset-name">{h.name}</span>
+                        <span className="asset-ticker">
+                          {h.ticker}
+                          <span className="asset-type-badge">
+                            {h.asset_type === 'stock' ? 'IDX' : 'Crypto'}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="holding-mobile-value-col">
+                      <span className="holding-mobile-val">{formatCurrency(h.current_value, currency)}</span>
+                      <span className={`change-badge ${is24hPos ? 'positive' : 'negative'}`}>
+                        {is24hPos ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                        {formatPercent(h.change_24h_pct)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="holding-mobile-grid">
+                    <div className="holding-mobile-metric">
+                      <span className="holding-mobile-label">{t('holdings.colHoldings')}</span>
+                      <span className="holding-mobile-num">
+                        {h.asset_type === 'stock'
+                          ? `${Math.floor(h.quantity / 100).toLocaleString('id-ID')} lot`
+                          : formatQuantity(h.quantity, h.asset_type)}
+                      </span>
+                    </div>
+
+                    <div className="holding-mobile-metric">
+                      <span className="holding-mobile-label">{t('holdings.colPrice')}</span>
+                      <span className="holding-mobile-num">{formatCurrency(h.current_price, currency)}</span>
+                    </div>
+
+                    <div className="holding-mobile-metric align-right">
+                      <span className="holding-mobile-label">{t('holdings.colPL')}</span>
+                      <span className={`pl-amount ${isPlPos ? 'positive' : 'negative'}`} style={{ color: isPlPos ? 'var(--green-text)' : 'var(--red)' }}>
+                        {formatCurrency(h.unrealized_pl, currency)} ({formatPercent(h.unrealized_pl_pct)})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
+}
+
+function getAssetColor(ticker: string): string {
+  const colors: Record<string, string> = {
+    BTC: '#D97706', ETH: '#1D4ED8', SOL: '#0F766E', BNB: '#B45309',
+    XRP: '#1E293B', ADA: '#1E40AF', DOGE: '#A16207', DOT: '#BE185D',
+    BBCA: '#1E3A8A', BBRI: '#1E40AF', TLKM: '#B91C1C', ASII: '#15803D',
+    BMRI: '#0369A1', UNVR: '#0284C7', GOTO: '#166534', BREN: '#0F766E',
+  };
+  if (colors[ticker]) return colors[ticker];
+  let hash = 0;
+  for (let i = 0; i < ticker.length; i++) hash = ticker.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 55%, 36%)`;
 }

@@ -33,10 +33,10 @@ function getAssetIcon(ticker: string, type: string) {
 function getAssetColor(ticker: string, type: string): string {
   if (type === 'crypto') {
     const colors: Record<string, string> = {
-      bitcoin: '#F7931A', ethereum: '#627EEA', solana: '#9945FF',
-      cardano: '#0033AD', polkadot: '#E6007A', ripple: '#23292F',
+      bitcoin: '#D97706', ethereum: '#1D4ED8', solana: '#0F766E',
+      cardano: '#0033AD', polkadot: '#BE185D', ripple: '#23292F',
     };
-    return colors[ticker] || '#6366f1';
+    return colors[ticker] || '#1D4ED8';
   }
   const stockColors: Record<string, string> = {
     BBCA: '#003D79', BBRI: '#00529C', BMRI: '#003366', BBNI: '#F15A22',

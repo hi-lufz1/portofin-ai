@@ -87,7 +87,7 @@ export default function LoginPage() {
           <div className="login-features">
             <div className="login-feature">
               <div className="login-feature-dot ai" />
-              <span>AI Portfolio Advisor — analisis cerdas</span>
+              <span>AI Portfolio Advisor: analisis portofolio berbasis data</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />
@@ -112,7 +112,7 @@ export default function LoginPage() {
       {/* Right Panel - Form */}
       <div className="login-form-panel">
         <div className="login-form-container">
-          {/* Mobile Branding Header — only visible on mobile */}
+          {/* Mobile Branding Header: only visible on mobile */}
           <div className="login-mobile-brand" id="login-mobile-brand">
             <div className="login-mobile-logo">
               <img src="/logo.png" alt="Portofin" width={22} height={22} style={{ borderRadius: 4 }} />
@@ -124,7 +124,7 @@ export default function LoginPage() {
             {isDemo && (
             <div className="login-demo-banner" id="demo-banner">
               <strong>Mode Demo</strong>
-              <p>Supabase belum dikonfigurasi. Login dinonaktifkan — kamu langsung masuk ke dashboard dengan data demo.</p>
+              <p>Supabase belum dikonfigurasi. Login dinonaktifkan. Kamu langsung masuk ke dashboard dengan data demo.</p>
               <a href="/dashboard" className="btn-primary login-demo-btn">
                 Masuk ke Dashboard
                 <ArrowRight size={16} />
@@ -138,8 +138,8 @@ export default function LoginPage() {
             </h2>
             <p className="login-form-subtitle">
               {mode === 'login'
-                ? 'Masuk untuk mengakses portofolio kamu'
-                : 'Daftar untuk mulai tracking investasi kamu'}
+                ? 'Masuk untuk mengakses dan menyinkronkan portofolio kamu'
+                : 'Daftar untuk mencadangkan investasi kamu ke cloud'}
             </p>
           </div>
 
@@ -205,7 +205,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="login-eye-btn"
-                  tabIndex={-1}
+                  aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -252,6 +252,7 @@ export default function LoginPage() {
           </div>
 
           <button
+            type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading || isDemo}
             className="login-google-btn"
@@ -270,18 +271,23 @@ export default function LoginPage() {
             Lanjutkan dengan Google
           </button>
 
+          <a href="/dashboard" className="login-guest-link">
+            <span>Lanjutkan sebagai Tamu (Tanpa Login)</span>
+            <ArrowRight size={14} />
+          </a>
+
           <div className="login-toggle">
             {mode === 'login' ? (
               <p>
                 Belum punya akun?{' '}
-                <button onClick={() => { setMode('register'); setError(null); setSuccess(null); }} className="login-toggle-link" id="switch-to-register">
+                <button type="button" onClick={() => { setMode('register'); setError(null); setSuccess(null); }} className="login-toggle-link" id="switch-to-register">
                   Daftar
                 </button>
               </p>
             ) : (
               <p>
                 Sudah punya akun?{' '}
-                <button onClick={() => { setMode('login'); setError(null); setSuccess(null); }} className="login-toggle-link" id="switch-to-login">
+                <button type="button" onClick={() => { setMode('login'); setError(null); setSuccess(null); }} className="login-toggle-link" id="switch-to-login">
                   Masuk
                 </button>
               </p>
@@ -289,7 +295,7 @@ export default function LoginPage() {
           </div>
           </div>
 
-          {/* Mobile Footer — only visible on mobile */}
+          {/* Mobile Footer: only visible on mobile */}
           <div className="login-mobile-footer" id="login-mobile-footer">
             <span>© 2026 Portofin. Built by Latif Fauzi.</span>
           </div>
