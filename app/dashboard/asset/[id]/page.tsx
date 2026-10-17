@@ -190,7 +190,7 @@ export default function AssetDetailPage() {
         </div>
       </div>
 
-      {/* Stats Grid — 5 cards */}
+      {/* Stats Grid - 5 cards */}
       <div className="detail-stats-grid" id="detail-stats">
         {/* Total Value */}
         <div className="detail-stat-card">

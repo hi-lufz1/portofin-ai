@@ -248,7 +248,7 @@ export default function AddAssetModal({ isOpen, onClose }: AddAssetModalProps) {
               </span>
             </div>
 
-            {/* Quantity — Lot for stocks, Amount for crypto */}
+            {/* Quantity: Lot for stocks, Amount for crypto */}
             <div className="form-group">
               <label htmlFor="quantity" className="form-label">
                 {assetType === 'stock' ? t('modal.lots') : t('modal.amount')}

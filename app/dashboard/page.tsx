@@ -1,52 +1,69 @@
 'use client';
 
-import React, { useState } from 'react';
-import PortfolioSummary from '@/components/PortfolioSummary';
+import { useState } from 'react';
+import PortfolioSummaryCards from '@/components/PortfolioSummary';
 import HoldingsTable from '@/components/HoldingsTable';
 import AllocationChart from '@/components/AllocationChart';
 import AddAssetModal from '@/components/AddAssetModal';
+import PortfolioSelector from '@/components/PortfolioSelector';
 import SaveToCloudBanner from '@/components/SaveToCloudBanner';
+import { Plus, RefreshCw } from 'lucide-react';
+import { usePortfolio } from '@/contexts/PortfolioContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Plus } from 'lucide-react';
 
 export default function DashboardPage() {
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const { refreshData, loading } = usePortfolio();
   const { t } = useLanguage();
 
   return (
-    <div className="page-content">
-      {/* Page Header */}
+    <div className="page-content" id="dashboard-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">{t('dashboard.title')}</h1>
           <p className="page-subtitle">{t('dashboard.subtitle')}</p>
         </div>
         <div className="page-actions">
-          <button type="button" className="btn-primary" onClick={() => setShowAddModal(true)}>
-            <Plus size={16} strokeWidth={2.5} />
+          <button
+            type="button"
+            onClick={() => refreshData()}
+            className="btn-ghost"
+            disabled={loading}
+            id="refresh-btn"
+            aria-label="Refresh portfolio prices"
+          >
+            <RefreshCw size={16} className={loading ? 'spin' : ''} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="btn-primary"
+            id="add-asset-btn"
+          >
+            <Plus size={16} />
             <span>{t('dashboard.addAsset')}</span>
           </button>
         </div>
       </div>
 
+      <PortfolioSelector />
+
       {/* Guest Mode Cloud Backup & Sample Data Banner */}
       <SaveToCloudBanner />
 
       {/* Summary Cards */}
-      <PortfolioSummary />
+      <PortfolioSummaryCards />
 
-      {/* Main Content Grid */}
       <div className="dashboard-grid">
         <div className="dashboard-main">
-          <HoldingsTable onAddClick={() => setShowAddModal(true)} />
+          <HoldingsTable />
         </div>
         <div className="dashboard-sidebar">
           <AllocationChart />
         </div>
       </div>
 
-      {/* Add Asset Modal */}
-      {showAddModal && <AddAssetModal onClose={() => setShowAddModal(false)} />}
+      <AddAssetModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );
 }

@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { enforceRateLimit } from '@/lib/api-security';
 
 /**
  * Proxy endpoint for Yahoo Finance stock search.
  * Usage: /api/stock-search?q=CUAN
  */
 export async function GET(request: NextRequest) {
-  const query = request.nextUrl.searchParams.get('q');
+  const rateLimitRes = enforceRateLimit(request, 'stock-search', 60, 60_000);
+  if (rateLimitRes) return rateLimitRes;
+
+  const rawQuery = request.nextUrl.searchParams.get('q')?.trim() || '';
+  const query = rawQuery.replace(/[\x00-\x1F\x7F]/g, '').slice(0, 50);
 
   if (!query || query.length < 1) {
     return NextResponse.json({ results: [] });
@@ -31,11 +36,12 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await res.json();
-    
+
     // Filter to only IDX stocks (.JK suffix) and map to our format
     const results = (data.quotes || [])
-      .filter((q: { exchange?: string; symbol?: string; quoteType?: string }) => 
-        q.symbol?.endsWith('.JK') || q.exchange === 'JKT'
+      .filter(
+        (q: { exchange?: string; symbol?: string; quoteType?: string }) =>
+          q.symbol?.endsWith('.JK') || q.exchange === 'JKT'
       )
       .map((q: { symbol?: string; shortname?: string; longname?: string; exchange?: string }) => ({
         ticker: (q.symbol || '').replace('.JK', ''),
@@ -45,11 +51,14 @@ export async function GET(request: NextRequest) {
       }))
       .slice(0, 10);
 
-    return NextResponse.json({ results }, {
-      headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
-    });
+    return NextResponse.json(
+      { results },
+      {
+        headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
+      }
+    );
   } catch (error) {
-    console.error('Stock search proxy error:', error);
+    console.error('Stock search proxy error:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ results: [] });
   }
 }

@@ -13,7 +13,7 @@ const priceCache = new Map<string, { data: PriceData; timestamp: number }>();
 const PRICE_CACHE_TTL = 60 * 1000; // 60 seconds
 
 /**
- * Fetch IDR/USD exchange rate — tries multiple APIs with fallback
+ * Fetch IDR/USD exchange rate - tries multiple APIs with fallback
  */
 export async function getExchangeRate(): Promise<number> {
   if (cachedExchangeRate && Date.now() - cachedExchangeRate.timestamp < EXCHANGE_RATE_CACHE_TTL) {
