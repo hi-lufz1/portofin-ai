@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePortfolio } from '@/contexts/PortfolioContext';
@@ -11,6 +12,8 @@ export default function AuthModal() {
   const { isAuthModalOpen, authModalReason, closeAuthModal } = useAuth();
   const { guestAssetCount } = usePortfolio();
   const { t, lang } = useLanguage();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -42,11 +45,17 @@ export default function AuthModal() {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
         closeAuthModal();
+        if (pathname === '/') {
+          router.push('/dashboard');
+        }
       } else {
         const { data, error: err } = await supabase.auth.signUp({ email, password });
         if (err) throw err;
         if (data.session) {
           closeAuthModal();
+          if (pathname === '/') {
+            router.push('/dashboard');
+          }
         } else {
           setMessage(
             lang === 'id'

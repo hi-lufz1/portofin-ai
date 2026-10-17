@@ -14,6 +14,15 @@ export default function AppShell({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
+  if (pathname === '/') {
+    return (
+      <>
+        {children}
+        <AuthModal />
+      </>
+    );
+  }
+
   if (loading) {
     return (
       <div className="auth-loading">
