@@ -159,7 +159,7 @@ export default function HoldingsTable() {
                           <span className="asset-name">{holding.name}</span>
                           <span className="asset-ticker">
                             {holding.type === 'stock' ? holding.ticker : holding.ticker.toUpperCase()}
-                            <span className="asset-type-badge">
+                            <span className={`asset-type-badge ${holding.type === 'crypto' ? 'crypto' : 'stock'}`}>
                               {holding.type === 'crypto' ? 'Crypto' : 'IDX'}
                             </span>
                             {holding.type === 'crypto' && holding.buy_price_currency && (
@@ -267,7 +267,7 @@ export default function HoldingsTable() {
                       <span className="asset-name">{holding.name}</span>
                       <span className="asset-ticker">
                         {holding.type === 'stock' ? holding.ticker : holding.ticker.toUpperCase()}
-                        <span className="asset-type-badge">
+                        <span className={`asset-type-badge ${holding.type === 'crypto' ? 'crypto' : 'stock'}`}>
                           {holding.type === 'crypto' ? 'Crypto' : 'IDX'}
                         </span>
                       </span>

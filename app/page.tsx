@@ -727,17 +727,31 @@ export default function LandingPage() {
                           )} 150`}
                         />
                       </svg>
-                      <div className="landing-hhi-numbers">
-                        <span className="landing-hhi-main tabular">
-                          HHI = {computedLedger.hhiDecimal.toFixed(3)}
-                        </span>
-                        <span className="landing-hhi-sub">
-                          {isID
-                            ? `Skor Rasio: ${computedLedger.hhiScore100} / 100`
-                            : `Ratio Score: ${computedLedger.hhiScore100} / 100`}
-                        </span>
+                        <div className="landing-hhi-numbers">
+                          <span className="landing-hhi-main tabular">
+                            HHI = {computedLedger.hhiDecimal.toFixed(3)}
+                          </span>
+                          <span className="landing-hhi-sub">
+                            {isID
+                              ? `Skor Rasio: ${computedLedger.hhiScore100} / 100`
+                              : `Ratio Score: ${computedLedger.hhiScore100} / 100`}
+                          </span>
+                          <span
+                            className={`landing-hhi-status-badge ${
+                              computedLedger.hhiPoints < 3000 ? 'diversified' : 'concentrated'
+                            }`}
+                          >
+                            <span className="landing-hhi-status-dot" />
+                            {computedLedger.hhiPoints < 3000
+                              ? isID
+                                ? 'TERDIVERSIFIKASI'
+                                : 'DIVERSIFIED'
+                              : isID
+                                ? 'KONSENTRASI TINGGI'
+                                : 'CONCENTRATED'}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
                     <div className="landing-alloc-breakdown">
                       <div className="landing-alloc-row tabular">

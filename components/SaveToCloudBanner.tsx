@@ -52,6 +52,7 @@ export default function SaveToCloudBanner() {
         <div className="save-cloud-text">
           <div className="save-cloud-title">
             <span className="save-cloud-badge">
+              <span className="save-cloud-badge-dot" />
               {lang === 'id' ? 'Sandbox Lokal' : 'Local Sandbox'}
             </span>
             <span>
