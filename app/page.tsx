@@ -12,6 +12,10 @@ import {
   Scale,
   RotateCcw,
   Plus,
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
+  HardDrive,
 } from 'lucide-react';
 
 interface LedgerRow {
@@ -288,50 +292,71 @@ export default function LandingPage() {
               </div>
             )}
 
-            {/* Asymmetric Editorial Header + Direct Actions */}
+            {/* Center-Aligned Editorial Header with Commanding Visual Hierarchy */}
             <div className="landing-hero-header">
-              <div className="landing-hero-copy">
-                <h1 className="landing-hero-title">
+              <div className="landing-hero-eyebrow">
+                <span className="landing-eyebrow-dot" />
+                <span>
                   {isID
-                    ? 'Buku Besar Portofolio Saham BEI dan Aset Kripto dalam Satu Kanvas Akuntansi.'
-                    : 'One Accounting Ledger for IDX Equities and Fractional Crypto Assets.'}
-                </h1>
-                <p className="landing-hero-subtitle">
-                  {isID
-                    ? 'Catat kepemilikan saham Indonesia dalam satuan Lot (100 lembar) berdampingan dengan aset kripto desimal. Hitung rata-rata harga beli tertimbang, konversi nilai IDR/USD secara langsung, dan ukur risiko konsentrasi portofolio dengan indeks matematis HHI.'
-                    : 'Record Indonesian equities in standard Lots (100 shares) alongside fractional crypto holdings. Compute weighted-average cost basis, switch between IDR and USD instantaneously, and measure portfolio concentration via the mathematical HHI index.'}
-                </p>
+                    ? 'BUKU BESAR SAHAM BEI & ASET KRIPTO'
+                    : 'IDX EQUITIES & FRACTIONAL CRYPTO LEDGER'}
+                </span>
               </div>
 
-              <div className="landing-hero-cta-panel">
-                <div className="landing-hero-cta-buttons">
-                  <Link
-                    href="/dashboard"
-                    className="btn-primary landing-hero-btn-primary"
-                    id="hero-cta-sandbox"
-                  >
-                    <span>
-                      {isID ? 'Mulai di Mode Tamu' : 'Start in Guest Mode'}
-                    </span>
-                  </Link>
+              <h1 className="landing-hero-title">
+                {isID
+                  ? 'Satu Buku Besar Terpadu untuk Saham BEI dan Aset Kripto'
+                  : 'One Unified Accounting Ledger for IDX Equities & Crypto'}
+              </h1>
 
-                  <button
-                    type="button"
-                    onClick={() => openAuthModal()}
-                    className="btn-secondary landing-hero-btn-cloud"
-                    id="hero-cta-auth"
-                  >
-                    <CloudUpload size={17} />
-                    <span>
-                      {isID ? 'Masuk / Cadangkan ke Cloud' : 'Sign In / Back Up to Cloud'}
-                    </span>
-                  </button>
+              <p className="landing-hero-subtitle">
+                {isID
+                  ? 'Pencatatan portofolio saham Indonesia dalam satuan Lot (100 lembar) berdampingan dengan unit desimal kripto. Hitung modal rata-rata tertimbang, pantau nilai IDR & USD secara real-time, dan evaluasi risiko konsentrasi dengan indeks matematis HHI.'
+                  : 'Precision portfolio accounting for Indonesian equities in standard Lots (100 shares) alongside fractional crypto holdings. Track weighted-average cost basis, evaluate IDR & USD values, and quantify concentration risk with the mathematical HHI index.'}
+              </p>
+
+              <div className="landing-hero-actions">
+                <Link
+                  href="/dashboard"
+                  className="btn-primary landing-hero-btn-primary"
+                  id="hero-cta-sandbox"
+                >
+                  <span>{isID ? 'Mulai di Mode Tamu' : 'Start in Guest Mode'}</span>
+                  <ArrowRight size={17} />
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => openAuthModal()}
+                  className="btn-secondary landing-hero-btn-cloud"
+                  id="hero-cta-auth"
+                >
+                  <CloudUpload size={17} />
+                  <span>
+                    {isID ? 'Masuk / Simpan ke Cloud' : 'Sign In / Save to Cloud'}
+                  </span>
+                </button>
+              </div>
+
+              <div className="landing-hero-trust-strip" role="list">
+                <div className="landing-trust-item" role="listitem">
+                  <CheckCircle2 size={15} className="landing-trust-icon" />
+                  <span>{isID ? 'Tanpa Registrasi Awal' : 'No Upfront Registration'}</span>
                 </div>
-                <p className="landing-hero-cta-note">
-                  {isID
-                    ? 'Langsung berfungsi penuh di browser Anda tanpa registrasi awal. Sinkronkan ke akun cloud kapan saja.'
-                    : 'Works immediately in your browser with zero upfront registration. Sync to a cloud account whenever you are ready.'}
-                </p>
+                <div className="landing-trust-item" role="listitem">
+                  <HardDrive size={15} className="landing-trust-icon" />
+                  <span>
+                    {isID ? 'Data di Browser Anda (Local-First)' : 'Stored in Your Browser (Local-First)'}
+                  </span>
+                </div>
+                <div className="landing-trust-item" role="listitem">
+                  <ShieldCheck size={15} className="landing-trust-icon" />
+                  <span>{isID ? '100% Bebas Iklan & Pelacak' : '100% Ad & Tracker Free'}</span>
+                </div>
+                <div className="landing-trust-item" role="listitem">
+                  <Scale size={15} className="landing-trust-icon" />
+                  <span>{isID ? 'Kalkulasi Risiko HHI Objektif' : 'Objective HHI Math'}</span>
+                </div>
               </div>
             </div>
 
@@ -348,9 +373,17 @@ export default function LandingPage() {
               {/* Console Control Bar */}
               <div className="landing-console-toolbar">
                 <div className="landing-console-toolbar-left">
-                  <span className="landing-console-label">
-                    {isID ? 'BUKU BESAR SIMULASI INTERAKTIF' : 'INTERACTIVE LEDGER WORKSPACE'}
-                  </span>
+                  <div className="landing-console-dots" aria-hidden="true">
+                    <span className="landing-console-dot close" />
+                    <span className="landing-console-dot minimize" />
+                    <span className="landing-console-dot maximize" />
+                  </div>
+                  <div className="landing-console-badge">
+                    <span className="landing-live-dot" />
+                    <span className="landing-console-label">
+                      {isID ? 'KONSOL BUKU BESAR INTERAKTIF' : 'INTERACTIVE LEDGER WORKSPACE'}
+                    </span>
+                  </div>
                   <div className="landing-console-tabs" role="tablist">
                     <button
                       type="button"
