@@ -34,6 +34,11 @@ export const translations: Record<string, Record<Language, string>> = {
   'holdings.value': { id: 'NILAI', en: 'VALUE' },
   'holdings.pl': { id: 'L/R', en: 'P/L' },
   'holdings.change24h': { id: '24J', en: '24H' },
+  'holdings.emptyTitle': { id: 'Portofolio Masih Kosong', en: 'No Holdings Yet' },
+  'holdings.empty': {
+    id: 'Belum ada aset dalam portofolio ini. Tambahkan aset pertamamu atau muat data contoh untuk memulai!',
+    en: 'No assets in this portfolio yet. Add your first asset or load sample data to get started!',
+  },
 
   // Allocation
   'allocation.title': { id: 'Alokasi Aset', en: 'Asset Allocation' },
@@ -78,6 +83,7 @@ export const translations: Record<string, Record<Language, string>> = {
   'modal.note': { id: 'Catatan (opsional)', en: 'Note (optional)' },
   'modal.notePlaceholder': { id: 'Tambahkan catatan...', en: 'Add a note...' },
   'modal.back': { id: 'Kembali', en: 'Back' },
+  'modal.cancel': { id: 'Batal', en: 'Cancel' },
   'modal.addPosition': { id: 'Tambah Posisi', en: 'Add Position' },
   'modal.adding': { id: 'Menambahkan...', en: 'Adding...' },
   'modal.fetchingPrice': { id: 'Mengambil harga...', en: 'Fetching price...' },
@@ -85,6 +91,8 @@ export const translations: Record<string, Record<Language, string>> = {
 
   // Login
   'login.welcome': { id: 'Selamat datang kembali', en: 'Welcome back' },
+  'login.welcomeBack': { id: 'Selamat datang kembali', en: 'Welcome back' },
+  'login.welcomeback': { id: 'Selamat datang kembali', en: 'Welcome back' },
   'login.createAccount': { id: 'Buat akun', en: 'Create account' },
   'login.signInSubtitle': { id: 'Masuk untuk mengakses portofolio kamu', en: 'Sign in to access your portfolio' },
   'login.registerSubtitle': { id: 'Daftar untuk mulai melacak investasi', en: 'Register to start tracking your investments' },
@@ -105,8 +113,10 @@ export const translations: Record<string, Record<Language, string>> = {
 
   // Guest Mode & Cloud Sync
   'guest.badge': { id: 'Mode Tamu', en: 'Guest Mode' },
+  'guest.localOnly': { id: 'Tersimpan lokal', en: 'Saved locally' },
   'guest.localStatus': { id: 'Tersimpan di browser ini', en: 'Saved in this browser' },
   'guest.saveToCloud': { id: 'Simpan ke Cloud', en: 'Save to Cloud' },
+  'guest.signIn': { id: 'Masuk / Daftar', en: 'Sign In / Sign Up' },
   'guest.signInOrUp': { id: 'Masuk / Daftar', en: 'Sign In / Sign Up' },
   'guest.bannerTitleEmpty': { id: 'Mode Sandbox Lokal Aktif', en: 'Local Sandbox Mode Active' },
   'guest.bannerDescEmpty': { id: 'Tambahkan aset pertamamu atau muat portofolio contoh untuk mencoba analisis real-time tanpa daftar akun.', en: 'Add your first asset or load a sample portfolio to test live market tracking without creating an account.' },
@@ -199,17 +209,17 @@ export const translations: Record<string, Record<Language, string>> = {
   'detail.notFoundHint': { id: 'Aset ini mungkin sudah terjual atau dihapus. Kamu masih bisa melihat riwayat transaksinya.', en: 'This asset may have been sold or deleted. You can still view its transaction history.' },
   'detail.viewHistory': { id: 'Lihat Riwayat', en: 'View History' },
 
-  // AI Advisor
-  'nav.aiAdvisor': { id: 'AI Advisor', en: 'AI Advisor' },
-  'ai.title': { id: 'AI Advisor', en: 'AI Advisor' },
-  'ai.subtitle': { id: 'Konsultan portofolio berbasis data pasar', en: 'Data-driven portfolio analysis consultant' },
+  // AI Analytics & Diagnostics (Non-Advisory)
+  'nav.aiAdvisor': { id: 'Analisis AI', en: 'AI Analytics' },
+  'ai.title': { id: 'Analisis & Diagnostik Portofolio', en: 'Portfolio Analytics & Diagnostics' },
+  'ai.subtitle': { id: 'Diagnostik risiko, metrik konsentrasi, dan simulasi skenario (Bukan Nasihat Investasi)', en: 'Risk diagnostics, concentration metrics, and scenario simulations (Non-Advisory)' },
   'ai.clearChat': { id: 'Hapus Chat', en: 'Clear Chat' },
-  'ai.emptyTitle': { id: 'Halo, Saya Portofin AI', en: 'Hello, I am Portofin AI' },
-  'ai.emptyDesc': { id: 'Saya menganalisis struktur portofolio kamu, mengevaluasi konsentrasi risiko, dan menyusun langkah taktis. Pilih pertanyaan di bawah atau ketik sendiri.', en: 'I analyze your portfolio structure, evaluate risk concentration, and outline tactical steps. Pick a question below or type your own.' },
-  'ai.inputPlaceholder': { id: 'Tanya tentang portofolio kamu...', en: 'Ask about your portfolio...' },
-  'ai.disclaimer': { id: 'AI Advisor bukan saran finansial profesional. Selalu lakukan riset mandiri.', en: 'AI Advisor is not professional financial advice. Always do your own research.' },
-  'ai.insightsTitle': { id: 'AI Insights', en: 'AI Insights' },
-  'ai.refresh': { id: 'Refresh insights', en: 'Refresh insights' },
-  'ai.insightsEmpty': { id: 'Klik refresh untuk mendapatkan insight AI', en: 'Click refresh to get AI insights' },
-  'ai.chatCta': { id: 'Chat dengan AI Advisor', en: 'Chat with AI Advisor' },
+  'ai.emptyTitle': { id: 'Asisten Analitik & Diagnostik Portofolio', en: 'Portfolio Analytics & Diagnostic Copilot' },
+  'ai.emptyDesc': { id: 'Saya membantu menghitung konsentrasi risiko (HHI), membedah distribusi kelas aset, dan menyimulasikan skenario pasar secara edukatif. Pilih topik diagnostik di bawah atau ketik pertanyaanmu.', en: 'I calculate risk concentration (HHI), break down asset-class exposure, and simulate market scenarios for educational purposes. Pick a diagnostic topic below or type your question.' },
+  'ai.inputPlaceholder': { id: 'Tanyakan metrik risiko atau simulasi portofolio...', en: 'Ask about risk metrics or portfolio simulations...' },
+  'ai.disclaimer': { id: 'Penting (DYOR): Portofin AI adalah asisten analitik kuantitatif dan simulasi edukasi portofolio, bukan penasihat keuangan berlisensi atau anjuran jual/beli.', en: 'Important (DYOR): Portofin AI is a quantitative analytics and educational diagnostic copilot, not a licensed financial advisor or recommendation to buy/sell assets.' },
+  'ai.insightsTitle': { id: 'Diagnostik AI', en: 'AI Diagnostics' },
+  'ai.refresh': { id: 'Perbarui diagnostik', en: 'Refresh diagnostics' },
+  'ai.insightsEmpty': { id: 'Klik refresh untuk memuat diagnostik portofolio', en: 'Click refresh to load portfolio diagnostics' },
+  'ai.chatCta': { id: 'Konsultasi Analitik Portofolio', en: 'Portfolio Analytics Copilot' },
 };

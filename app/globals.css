@@ -460,6 +460,41 @@ input, select, textarea { font: inherit; }
 .change-badge.negative { background: var(--red-bg); color: var(--red-text); }
 
 .holdings-loading, .holdings-empty { text-align: center; padding: 48px 20px; color: var(--text-muted); font-size: 14px; }
+.holdings-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 16px 12px;
+  text-align: center;
+}
+.holdings-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--surface-dim);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.holdings-empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.holdings-empty-desc {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
 .loading-pulse { width: 40px; height: 40px; margin: 0 auto; border-radius: 50%; background: var(--surface-dim); border: 2px solid var(--border); }
 
 /* Holding Action Menu */
@@ -779,9 +814,32 @@ input, select, textarea { font: inherit; }
 .login-eye-btn:hover { color: var(--text); background: var(--surface-hover); }
 
 .login-submit-btn {
-  width: 100%; justify-content: center;
-  min-height: 46px; padding: 12px 18px; margin-top: 6px;
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 18px;
+  margin-top: 6px;
   font-size: 15px;
+  font-weight: 600;
+  background: var(--primary);
+  color: #FFFFFF;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
+}
+.login-submit-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+.login-submit-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.login-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .login-error {
@@ -1578,7 +1636,49 @@ input, select, textarea { font: inherit; }
   display: flex; gap: 16px; flex-wrap: wrap;
 }
 
-/* ============================================ AI DISCLAIMER */
+/* ============================================ AI DISCLAIMER & NON-ADVISORY GUARDRAIL */
+.ai-guardrail-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  margin-bottom: 24px;
+  border-radius: var(--radius-lg);
+  background: var(--amber-bg);
+  border: 1px solid #FCD34D;
+  border-left: 4px solid var(--amber);
+  color: var(--text);
+}
+.ai-guardrail-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  background: #FFFFFF;
+  border: 1px solid #FDE68A;
+  color: var(--amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ai-guardrail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ai-guardrail-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #92400E;
+  letter-spacing: -0.01em;
+}
+.ai-guardrail-desc {
+  font-size: 13px;
+  color: #78350F;
+  line-height: 1.55;
+  margin: 0;
+}
+
 .ai-disclaimer-box {
   display: flex; align-items: flex-start; gap: 12px;
   padding: 12px 16px; border-radius: var(--radius-md);

@@ -54,7 +54,7 @@ interface Briefing {
 function buildPortfolioContext(
   holdings: ReturnType<typeof usePortfolio>['holdings'],
   summary: ReturnType<typeof usePortfolio>['summary'],
-  formatCurrency: ReturnType<typeof useCurrency>['formatCurrency'],
+  formatCurrency: ReturnType<typeof useCurrency>['formatCurrency']
 ) {
   if (holdings.length === 0) return '';
 
@@ -62,21 +62,26 @@ function buildPortfolioContext(
   lines.push(`Portfolio Overview:`);
   lines.push(`Total Value: ${formatCurrency(summary.total_value)}`);
   lines.push(`Total P/L: ${formatCurrency(summary.total_pl)} (${summary.total_pl_pct.toFixed(2)}%)`);
-  lines.push(`Daily Change: ${formatCurrency(summary.daily_change)} (${summary.daily_change_pct.toFixed(2)}%)`);
+  lines.push(
+    `Daily Change: ${formatCurrency(summary.daily_change)} (${summary.daily_change_pct.toFixed(2)}%)`
+  );
   lines.push(`\nAsset Breakdown:`);
   lines.push(`Crypto Value: ${formatCurrency(summary.crypto_value)}`);
   lines.push(`Stock Value: ${formatCurrency(summary.stock_value)}`);
   lines.push(`\nTop Holdings:`);
-  
+
   holdings
     .sort((a, b) => b.current_value - a.current_value)
     .slice(0, 5)
     .forEach((h) => {
-      const pct = summary.total_value > 0 ? ((h.current_value / summary.total_value) * 100).toFixed(1) : '0';
+      const pct =
+        summary.total_value > 0
+          ? ((h.current_value / summary.total_value) * 100).toFixed(1)
+          : '0';
       lines.push(
         `${h.ticker} (${h.type}): ${pct}% portfolio, ` +
-        `Value ${formatCurrency(h.current_value)}, ` +
-        `P/L ${h.profit_loss_pct.toFixed(2)}%`
+          `Value ${formatCurrency(h.current_value)}, ` +
+          `P/L ${h.profit_loss_pct.toFixed(2)}%`
       );
     });
 
@@ -114,7 +119,9 @@ export default function AIBriefing() {
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Briefing error:', err);
-      setError(lang === 'id' ? 'Gagal generate briefing' : 'Failed to generate briefing');
+      setError(
+        lang === 'id' ? 'Gagal memuat laporan diagnostik' : 'Failed to load diagnostic report'
+      );
     } finally {
       setLoading(false);
     }
@@ -137,19 +144,25 @@ export default function AIBriefing() {
         <div className="ai-briefing-header-left">
           <Sparkles size={20} className="ai-briefing-icon" />
           <div>
-            <h2 className="ai-briefing-title">{lang === 'id' ? 'Briefing Harian AI' : 'Daily AI Briefing'}</h2>
+            <h2 className="ai-briefing-title">
+              {lang === 'id'
+                ? 'Laporan Diagnostik Struktur Portofolio'
+                : 'Portfolio Structural Diagnostic Report'}
+            </h2>
             {lastUpdated && (
               <p className="ai-briefing-timestamp">
-                {lang === 'id' ? 'Diperbarui' : 'Updated'} {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {lang === 'id' ? 'Diperbarui' : 'Updated'}{' '}
+                {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             )}
           </div>
         </div>
         <button
+          type="button"
           onClick={generateBriefing}
           disabled={loading}
           className="ai-briefing-refresh"
-          title={lang === 'id' ? 'Refresh briefing' : 'Refresh briefing'}
+          title={lang === 'id' ? 'Perbarui diagnostik' : 'Refresh diagnostics'}
         >
           <RefreshCw size={16} className={loading ? 'spin' : ''} />
         </button>
@@ -165,7 +178,11 @@ export default function AIBriefing() {
       {loading && !briefing && (
         <div className="ai-briefing-loading">
           <Loader2 size={20} className="spin" />
-          <span>{lang === 'id' ? 'Menganalisis portofolio...' : 'Analyzing portfolio...'}</span>
+          <span>
+            {lang === 'id'
+              ? 'Menghitung eksposur risiko & struktur portofolio...'
+              : 'Evaluating risk exposure & portfolio structure...'}
+          </span>
         </div>
       )}
 
@@ -177,13 +194,17 @@ export default function AIBriefing() {
             <p className="ai-briefing-summary">{briefing.summary}</p>
           </div>
 
-          {/* Risk & Opportunities Grid */}
+          {/* Risk & Structural Strengths Grid */}
           <div className="ai-briefing-grid">
             {/* Risks */}
             <div className="ai-briefing-section">
               <div className="ai-briefing-section-header">
                 <AlertTriangle size={16} className="ai-briefing-section-icon warning" />
-                <h4>{lang === 'id' ? 'Risiko Teratas' : 'Top Risks'}</h4>
+                <h4>
+                  {lang === 'id'
+                    ? 'Faktor Risiko & Konsentrasi'
+                    : 'Concentration & Risk Factors'}
+                </h4>
               </div>
               <div className="ai-briefing-items">
                 {briefing.topRisks.map((risk, idx) => (
@@ -197,11 +218,15 @@ export default function AIBriefing() {
               </div>
             </div>
 
-            {/* Opportunities */}
+            {/* Structural Observations */}
             <div className="ai-briefing-section">
               <div className="ai-briefing-section-header">
                 <TrendingUp size={16} className="ai-briefing-section-icon opportunity" />
-                <h4>{lang === 'id' ? 'Peluang' : 'Opportunities'}</h4>
+                <h4>
+                  {lang === 'id'
+                    ? 'Kekuatan Struktur & Diversifikasi'
+                    : 'Structural Strengths & Diversification'}
+                </h4>
               </div>
               <div className="ai-briefing-items">
                 {briefing.topOpportunities.map((opp, idx) => (
@@ -216,12 +241,16 @@ export default function AIBriefing() {
             </div>
           </div>
 
-          {/* Predictions */}
+          {/* Sensitivity Scenarios */}
           {briefing.predictions.length > 0 && (
             <div className="ai-briefing-section">
               <div className="ai-briefing-section-header">
                 <Clock size={16} className="ai-briefing-section-icon" />
-                <h4>{lang === 'id' ? 'Prediksi Jangka Pendek' : 'Short-term Predictions'}</h4>
+                <h4>
+                  {lang === 'id'
+                    ? 'Skenario Sensitivitas & Volatilitas'
+                    : 'Volatility & Sensitivity Scenarios'}
+                </h4>
               </div>
               <div className="ai-briefing-predictions">
                 {briefing.predictions.map((pred, idx) => (
@@ -239,12 +268,16 @@ export default function AIBriefing() {
             </div>
           )}
 
-          {/* Recommendations */}
+          {/* Educational Observations */}
           {briefing.recommendations.length > 0 && (
             <div className="ai-briefing-section">
               <div className="ai-briefing-section-header">
                 <Lightbulb size={16} className="ai-briefing-section-icon" />
-                <h4>{lang === 'id' ? 'Rekomendasi Aksi' : 'Action Recommendations'}</h4>
+                <h4>
+                  {lang === 'id'
+                    ? 'Catatan Evaluasi & Keseimbangan Bobot (Edukasi)'
+                    : 'Weight Balance & Diagnostic Notes (Educational)'}
+                </h4>
               </div>
               <div className="ai-briefing-recommendations">
                 {briefing.recommendations.map((rec, idx) => (
@@ -257,9 +290,11 @@ export default function AIBriefing() {
                       <p className="ai-briefing-rec-reasoning">{rec.reasoning}</p>
                       <div className="ai-briefing-rec-impact">
                         <span className="ai-briefing-rec-impact-label">
-                          {lang === 'id' ? 'Dampak Estimasi:' : 'Estimated Impact:'}
+                          {lang === 'id' ? 'Implikasi Risiko:' : 'Risk Implication:'}
                         </span>
-                        <span className="ai-briefing-rec-impact-value">{rec.estimatedImpact}</span>
+                        <span className="ai-briefing-rec-impact-value">
+                          {rec.estimatedImpact}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -268,12 +303,16 @@ export default function AIBriefing() {
             </div>
           )}
 
-          {/* Next Steps */}
+          {/* Monitoring Items */}
           {briefing.nextSteps.length > 0 && (
             <div className="ai-briefing-section">
               <div className="ai-briefing-section-header">
                 <ChevronRight size={16} className="ai-briefing-section-icon" />
-                <h4>{lang === 'id' ? 'Pantau Hari Ini' : 'Monitor Today'}</h4>
+                <h4>
+                  {lang === 'id'
+                    ? 'Indikator Risiko untuk Dipantau'
+                    : 'Risk Indicators to Monitor'}
+                </h4>
               </div>
               <ul className="ai-briefing-next-steps">
                 {briefing.nextSteps.map((step, idx) => (
@@ -288,8 +327,8 @@ export default function AIBriefing() {
             <Lightbulb size={12} />
             <span>
               {lang === 'id'
-                ? 'Briefing ini adalah analisis AI untuk referensi saja, bukan saran investasi profesional. Lakukan riset independen sebelum membuat keputusan.'
-                : 'This briefing is AI-generated analysis for reference only, not professional investment advice. Conduct independent research before making decisions.'}
+                ? 'Penting (DYOR): Laporan diagnostik ini dihitung secara otomatis untuk edukasi struktur risiko portofolio, bukan nasihat investasi atau sinyal jual/beli dari penasihat keuangan berlisensi.'
+                : 'Important (DYOR): This diagnostic report is generated for portfolio risk education only, not investment advice or buy/sell signals from a licensed financial advisor.'}
             </span>
           </div>
         </>

@@ -73,7 +73,7 @@ export default function AuthModal() {
     setError(null);
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/dashboard` },
     });
     if (err) {
       setError(err.message);
@@ -161,7 +161,7 @@ export default function AuthModal() {
               </div>
             </div>
 
-            <button type="submit" className="login-submit-btn" disabled={loading}>
+            <button type="submit" className="btn-primary login-submit-btn" disabled={loading}>
               {loading ? (
                 <span>{t('login.processing')}</span>
               ) : (

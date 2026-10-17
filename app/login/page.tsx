@@ -87,7 +87,7 @@ export default function LoginPage() {
           <div className="login-features">
             <div className="login-feature">
               <div className="login-feature-dot ai" />
-              <span>AI Portfolio Advisor: analisis portofolio berbasis data</span>
+              <span>Asisten Diagnostik AI: evaluasi konsentrasi risiko &amp; simulasi portofolio</span>
             </div>
             <div className="login-feature">
               <div className="login-feature-dot" />

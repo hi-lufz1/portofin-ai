@@ -12,7 +12,14 @@ type Msg = { id: string; role: 'user' | 'assistant' | 'system'; content: string 
 
 export default function AIChat({ portfolioContext = '', lang = 'en' }: Props) {
   const [messages, setMessages] = useState<Msg[]>([
-    { id: 'm0', role: 'assistant', content: lang === 'id' ? 'Halo! Saya Portofin AI. Tanyakan sesuatu tentang portofoliomu, misalnya: "Apa risiko terbesar saya?"' : 'Hello! I am Portofin AI. Ask something about your portfolio, e.g. "What is my biggest risk?"' }
+    {
+      id: 'm0',
+      role: 'assistant',
+      content:
+        lang === 'id'
+          ? 'Halo! Saya Asisten Diagnostik Portofin. Saya membantu membedah konsentrasi risiko, bobot aset, dan simulasi skenario portofoliomu secara objektif (bukan saran jual/beli). Apa yang ingin kamu evaluasi?'
+          : 'Hello! I am the Portofin Diagnostic Copilot. I help evaluate your risk concentration, asset weights, and market scenarios objectively (non-advisory). What would you like to inspect?',
+    },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,7 +34,7 @@ export default function AIChat({ portfolioContext = '', lang = 'en' }: Props) {
   const send = async (text: string) => {
     if (!text.trim()) return;
     const userMsg: Msg = { id: String(Date.now()), role: 'user', content: text };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
     scrollToBottom();
@@ -41,11 +48,16 @@ export default function AIChat({ portfolioContext = '', lang = 'en' }: Props) {
       const data = await res.json();
       const aiContent = data.content || (lang === 'id' ? 'Tidak ada respons' : 'No response');
       const assistantMsg: Msg = { id: 'ai-' + Date.now(), role: 'assistant', content: aiContent };
-      setMessages(prev => [...prev, assistantMsg]);
+      setMessages((prev) => [...prev, assistantMsg]);
       scrollToBottom();
-    } catch (err) {
-      const errMsg: Msg = { id: 'err-' + Date.now(), role: 'assistant', content: lang === 'id' ? 'Gagal terhubung ke layanan AI.' : 'Failed to reach AI service.' };
-      setMessages(prev => [...prev, errMsg]);
+    } catch {
+      const errMsg: Msg = {
+        id: 'err-' + Date.now(),
+        role: 'assistant',
+        content:
+          lang === 'id' ? 'Gagal terhubung ke layanan AI.' : 'Failed to reach AI service.',
+      };
+      setMessages((prev) => [...prev, errMsg]);
       scrollToBottom();
     } finally {
       setLoading(false);
@@ -58,38 +70,85 @@ export default function AIChat({ portfolioContext = '', lang = 'en' }: Props) {
   };
 
   const presets = [
-    { label: lang === 'id' ? 'Efek inflasi pada portofolio' : 'Inflation effect on portfolio', prompt: lang === 'id' ? 'Berdasarkan aset saya saat ini, bagaimana kemungkinan efek dari inflasi yang tinggi terhadap portofolio saya?' : 'Based on my current assets, what is the likely effect of high inflation on my portfolio?' },
-    { label: lang === 'id' ? 'Simulasi: Bitcoin naik 20%' : 'Simulate: Bitcoin rises 20%', prompt: lang === 'id' ? 'Tolong simulasikan apa yang terjadi pada total nilai portofolio saya jika harga Bitcoin tiba-tiba naik 20%, asumsikan aset lain tetap.' : 'Please simulate what happens to my total portfolio value if Bitcoin suddenly rises 20%, assuming other assets stay the same.' },
-    { label: lang === 'id' ? 'Korelasi antar aset' : 'Correlation between assets', prompt: lang === 'id' ? 'Apakah ada aset dalam portofolio saya yang memiliki korelasi terlalu kuat sehingga membahayakan diversifikasi?' : 'Are there any assets in my portfolio that are too strongly correlated, risking my diversification?' },
+    {
+      label:
+        lang === 'id' ? 'Evaluasi konsentrasi risiko' : 'Evaluate risk concentration',
+      prompt:
+        lang === 'id'
+          ? 'Berdasarkan bobot aset saya saat ini, aset mana yang menyumbang konsentrasi risiko terbesar dan bagaimana dampaknya terhadap diversifikasi?'
+          : 'Based on my current asset weights, which holdings contribute the highest concentration risk and how does that affect diversification?',
+    },
+    {
+      label:
+        lang === 'id' ? 'Simulasi: Koreksi pasar 20%' : 'Simulate: 20% market drawdown',
+      prompt:
+        lang === 'id'
+          ? 'Tolong simulasikan secara matematis apa yang terjadi pada total nilai portofolio saya jika aset berisiko tinggi terkoreksi 20%.'
+          : 'Please mathematically simulate what happens to my total portfolio value if high-volatility assets drop by 20%.',
+    },
+    {
+      label: lang === 'id' ? 'Korelasi antar kelas aset' : 'Asset-class correlation',
+      prompt:
+        lang === 'id'
+          ? 'Bagaimana karakteristik korelasi antara porsi saham IDX dan crypto dalam portofolio saya saat ini?'
+          : 'What are the correlation characteristics between the IDX stock and crypto portions of my current portfolio?',
+    },
   ];
 
   return (
     <div className={styles.chatContainer} aria-live="polite">
       <div className={styles.header}>
-        <strong>{lang === 'id' ? 'AI Advisor' : 'AI Advisor'}</strong>
-        <span className={styles.badge}>AI</span>
+        <strong>
+          {lang === 'id' ? 'Asisten Diagnostik Portofolio' : 'Portfolio Diagnostic Copilot'}
+        </strong>
+        <span className={styles.badge}>
+          {lang === 'id' ? 'Edukasi & Analitik' : 'Non-Advisory'}
+        </span>
       </div>
       <div className={styles.messages} ref={listRef}>
-        {messages.map(m => (
-          <div key={m.id} className={`${styles.message} ${m.role === 'user' ? styles.user : styles.assistant}`}>
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={`${styles.message} ${
+              m.role === 'user' ? styles.user : styles.assistant
+            }`}
+          >
             <div className={styles.messageContent}>
-              {m.content.split('\n').map((line, i) => <p key={i}>{line}</p>)}
+              {m.content.split('\n').map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
             </div>
           </div>
         ))}
       </div>
 
       <div className={styles.presets}>
-        {presets.map(p => (
-          <button key={p.label} type="button" className={styles.presetBtn} onClick={() => send(p.prompt)}>
+        {presets.map((p) => (
+          <button
+            key={p.label}
+            type="button"
+            className={styles.presetBtn}
+            onClick={() => send(p.prompt)}
+          >
             {p.label}
           </button>
         ))}
       </div>
 
       <form onSubmit={handleSubmit} className={styles.form}>
-        <input className={styles.input} value={input} onChange={(e) => setInput(e.target.value)} placeholder={lang === 'id' ? 'Tanyakan sesuatu tentang portofolio Anda...' : 'Ask something about your portfolio...'} />
-        <button type="submit" className={styles.sendBtn} disabled={loading}>{loading ? '…' : (lang === 'id' ? 'Kirim' : 'Send')}</button>
+        <input
+          className={styles.input}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={
+            lang === 'id'
+              ? 'Tanyakan metrik risiko atau simulasi skenario...'
+              : 'Ask about risk metrics or scenario simulations...'
+          }
+        />
+        <button type="submit" className={styles.sendBtn} disabled={loading}>
+          {loading ? '...' : lang === 'id' ? 'Kirim' : 'Send'}
+        </button>
       </form>
     </div>
   );

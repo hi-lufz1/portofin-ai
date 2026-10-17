@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { usePortfolio } from '@/contexts/PortfolioContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { TrendingUp, TrendingDown, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronRight, Briefcase } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 // Crypto icon mapping
@@ -126,7 +126,13 @@ export default function HoldingsTable() {
             ) : sorted.length === 0 ? (
               <tr>
                 <td colSpan={7} className="holdings-empty">
-                  {t('holdings.empty')}
+                  <div className="holdings-empty-state">
+                    <div className="holdings-empty-icon">
+                      <Briefcase size={22} />
+                    </div>
+                    <span className="holdings-empty-title">{t('holdings.emptyTitle')}</span>
+                    <p className="holdings-empty-desc">{t('holdings.empty')}</p>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -221,7 +227,15 @@ export default function HoldingsTable() {
             <div className="loading-pulse" style={{ height: 20 }} />
           </div>
         ) : sorted.length === 0 ? (
-          <div className="holdings-empty">{t('holdings.empty')}</div>
+          <div className="holdings-empty">
+            <div className="holdings-empty-state">
+              <div className="holdings-empty-icon">
+                <Briefcase size={22} />
+              </div>
+              <span className="holdings-empty-title">{t('holdings.emptyTitle')}</span>
+              <p className="holdings-empty-desc">{t('holdings.empty')}</p>
+            </div>
+          </div>
         ) : (
           sorted.map((holding) => {
             const isPLPositive = holding.profit_loss >= 0;
