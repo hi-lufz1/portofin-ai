@@ -10,7 +10,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import {
   LayoutDashboard,
   ArrowLeftRight,
-  Sparkles,
+  Activity,
   Menu,
   X,
   LogOut,
@@ -20,7 +20,7 @@ import {
 
 const navKeys = [
   { href: '/dashboard', labelKey: 'nav.portfolio', icon: LayoutDashboard },
-  { href: '/ai-advisor', labelKey: 'nav.aiAdvisor', icon: Sparkles },
+  { href: '/ai-advisor', labelKey: 'nav.aiAdvisor', icon: Activity },
   { href: '/transactions', labelKey: 'nav.transactions', icon: ArrowLeftRight },
 ];
 
@@ -36,14 +36,14 @@ export default function Navbar() {
     <>
       {/* Desktop Sidebar */}
       <aside className="sidebar" id="sidebar-nav">
-        <div className="sidebar-brand">
+        <Link href="/" className="sidebar-brand">
           <div className="sidebar-logo">
             <img src="/logo.png" alt="Portofin" width={20} height={20} style={{ borderRadius: 4 }} />
           </div>
           <span className="sidebar-brand-text">Portofin</span>
-        </div>
+        </Link>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label="Main Navigation">
           {navKeys.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
@@ -76,7 +76,7 @@ export default function Navbar() {
             </div>
           ) : isGuest ? (
             <div className="sidebar-user" id="sidebar-guest">
-              <div className="sidebar-user-avatar" style={{ background: '#475569' }}>
+              <div className="sidebar-user-avatar guest">
                 G
               </div>
               <div className="sidebar-user-info">
@@ -121,7 +121,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => openAuthModal()}
-              className="sidebar-cloud-cta"
+              className="btn-primary sidebar-cloud-cta"
               id="save-cloud-btn"
             >
               <CloudUpload size={16} />
@@ -143,12 +143,12 @@ export default function Navbar() {
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <div className="mobile-brand">
+          <Link href="/" className="mobile-brand">
             <div className="sidebar-logo small">
               <img src="/logo.png" alt="Portofin" width={16} height={16} style={{ borderRadius: 3 }} />
             </div>
             <span className="mobile-brand-text">Portofin</span>
-          </div>
+          </Link>
         </div>
 
         <div className="mobile-header-right">
@@ -160,11 +160,11 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => openAuthModal()}
-              className="guest-pill"
+              className="btn-secondary guest-pill"
               title={t('guest.saveToCloud')}
             >
-              <span className="guest-pill-dot" />
-              <span>{t('guest.signIn')}</span>
+              <CloudUpload size={14} />
+              <span>{t('guest.saveToCloud')}</span>
             </button>
           ) : null}
 
@@ -194,7 +194,7 @@ export default function Navbar() {
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}>
-          <nav className="mobile-menu" onClick={(e) => e.stopPropagation()}>
+          <nav className="mobile-menu" onClick={(e) => e.stopPropagation()} aria-label="Mobile Navigation">
             {/* User or Guest Info */}
             {user ? (
               <div className="mobile-menu-user">
@@ -210,7 +210,7 @@ export default function Navbar() {
               </div>
             ) : isGuest ? (
               <div className="mobile-menu-user">
-                <div className="mobile-menu-avatar" style={{ background: '#475569' }}>
+                <div className="mobile-menu-avatar guest">
                   G
                 </div>
                 <div className="mobile-menu-user-info">
@@ -288,7 +288,7 @@ export default function Navbar() {
                   setMobileMenuOpen(false);
                   openAuthModal();
                 }}
-                className="sidebar-cloud-cta"
+                className="btn-primary sidebar-cloud-cta"
                 id="save-cloud-btn-mobile"
               >
                 <CloudUpload size={16} />

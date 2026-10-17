@@ -5,7 +5,7 @@ import { usePortfolio } from '@/contexts/PortfolioContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
-  Sparkles,
+  Activity,
   AlertTriangle,
   TrendingUp,
   Lightbulb,
@@ -142,7 +142,7 @@ export default function AIBriefing() {
       {/* Header */}
       <div className="ai-briefing-header">
         <div className="ai-briefing-header-left">
-          <Sparkles size={20} className="ai-briefing-icon" />
+          <Activity size={20} className="ai-briefing-icon" />
           <div>
             <h2 className="ai-briefing-title">
               {lang === 'id'

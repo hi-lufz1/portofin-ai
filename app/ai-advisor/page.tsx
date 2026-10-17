@@ -5,7 +5,7 @@ import { usePortfolio } from '@/contexts/PortfolioContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
-  Sparkles,
+  Activity,
   ShieldCheck,
   TrendingUp,
   PieChart,
@@ -196,7 +196,7 @@ export default function AIPortfolioPage() {
         <div className="page-header">
           <div>
             <h1 className="page-title ai-page-title">
-              <Sparkles size={24} />
+              <Activity size={24} />
               {t('ai.title')}
             </h1>
             <p className="page-subtitle">{t('ai.subtitle')}</p>
@@ -223,7 +223,7 @@ export default function AIPortfolioPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title ai-page-title">
-            <Sparkles size={24} />
+            <Activity size={24} />
             {t('ai.title')}
           </h1>
           <p className="page-subtitle">{t('ai.subtitle')}</p>
@@ -424,7 +424,7 @@ export default function AIPortfolioPage() {
           {/* Chat & Scenario */}
           <div className="ai-section">
             <div className="ai-section-header">
-              <Sparkles size={18} className="ai-section-icon" />
+              <Activity size={18} className="ai-section-icon" />
               <h2 className="ai-section-title">
                 {lang === 'id'
                   ? 'Diskusi Diagnostik & Simulasi Skenario'

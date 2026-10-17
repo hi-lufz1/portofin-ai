@@ -213,7 +213,7 @@ export default function TransactionsPage() {
 
       {/* Transaction Table & Mobile List */}
       <div className="transactions-section" id="transactions-section">
-        <div className="transactions-table-wrap">
+        <div className="transactions-table-wrap has-mobile-cards">
           <table className="transactions-table" id="transactions-table">
             <thead>
               <tr>

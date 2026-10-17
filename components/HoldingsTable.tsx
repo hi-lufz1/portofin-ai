@@ -103,7 +103,7 @@ export default function HoldingsTable() {
       </div>
 
       {/* Desktop Table View */}
-      <div className="holdings-table-wrap">
+      <div className="holdings-table-wrap has-mobile-cards">
         <table className="holdings-table" id="holdings-table">
           <thead>
             <tr>

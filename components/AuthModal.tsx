@@ -112,6 +112,35 @@ export default function AuthModal() {
         </div>
 
         <div className="auth-modal-body">
+          <div className="auth-mode-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'login'}
+              className={`auth-mode-tab ${mode === 'login' ? 'active' : ''}`}
+              onClick={() => {
+                setMode('login');
+                setError(null);
+                setMessage(null);
+              }}
+            >
+              {t('login.signIn')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'register'}
+              className={`auth-mode-tab ${mode === 'register' ? 'active' : ''}`}
+              onClick={() => {
+                setMode('register');
+                setError(null);
+                setMessage(null);
+              }}
+            >
+              {t('login.register')}
+            </button>
+          </div>
+
           {reasonText && (
             <div className="auth-modal-reason">
               <CloudUpload size={16} />

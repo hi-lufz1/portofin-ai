@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { User, Loader2, Sparkles } from 'lucide-react';
+import { User, Loader2, Activity } from 'lucide-react';
 import styles from './AIInvestorPersona.module.css';
 
 interface PersonaData {
@@ -63,7 +63,7 @@ export default function AIInvestorPersona({ portfolioContext, lang }: Props) {
           className={styles.generateBtn}
           disabled={loading || !portfolioContext}
         >
-          {loading ? <Loader2 size={14} className={styles.spin} /> : <Sparkles size={14} />}
+          {loading ? <Loader2 size={14} className={styles.spin} /> : <Activity size={14} />}
           <span>{data ? (lang === 'id' ? 'Analisis Ulang' : 'Re-analyze') : (lang === 'id' ? 'Buat Profil' : 'Generate Profile')}</span>
         </button>
       </div>

@@ -4,12 +4,12 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePortfolio } from '@/contexts/PortfolioContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { CloudUpload, Database, Sparkles } from 'lucide-react';
+import { CloudUpload, Database, Layers } from 'lucide-react';
 
 export default function SaveToCloudBanner() {
   const { isGuest, isDemo, openAuthModal } = useAuth();
   const { guestAssetCount, isSyncingGuest, seedSamplePortfolio } = usePortfolio();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [seeding, setSeeding] = useState(false);
 
   if (isDemo) return null;
@@ -41,14 +41,19 @@ export default function SaveToCloudBanner() {
   };
 
   return (
-    <div className="save-cloud-banner">
+    <section
+      className="save-cloud-banner"
+      aria-label={lang === 'id' ? 'Status Penyimpanan Sandbox Lokal' : 'Local Sandbox Storage Status'}
+    >
       <div className="save-cloud-left">
-        <div className="save-cloud-icon">
+        <div className="save-cloud-icon" aria-hidden="true">
           {guestAssetCount > 0 ? <CloudUpload size={18} /> : <Database size={18} />}
         </div>
         <div className="save-cloud-text">
           <div className="save-cloud-title">
-            <span className="save-cloud-badge">{t('guest.badge')}</span>
+            <span className="save-cloud-badge">
+              {lang === 'id' ? 'Sandbox Lokal' : 'Local Sandbox'}
+            </span>
             <span>
               {guestAssetCount > 0
                 ? t('guest.bannerTitleWithData').replace('{count}', String(guestAssetCount))
@@ -65,23 +70,23 @@ export default function SaveToCloudBanner() {
         {guestAssetCount === 0 && (
           <button
             type="button"
-            className="save-cloud-btn-secondary"
+            className="btn-secondary save-cloud-btn-secondary"
             onClick={handleSeed}
             disabled={seeding}
           >
-            <Sparkles size={14} />
+            <Layers size={15} />
             <span>{t('guest.loadSample')}</span>
           </button>
         )}
         <button
           type="button"
-          className="save-cloud-btn-primary"
+          className="btn-primary save-cloud-btn-primary"
           onClick={() => openAuthModal()}
         >
-          <CloudUpload size={14} />
-          <span>{guestAssetCount > 0 ? t('guest.saveToCloud') : t('guest.signInOrUp')}</span>
+          <CloudUpload size={15} />
+          <span>{t('guest.saveToCloud')}</span>
         </button>
       </div>
-    </div>
+    </section>
   );
 }
