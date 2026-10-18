@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePortfolio } from '@/contexts/PortfolioContext';
 
 /* ==========================================================================
-   MATHEMATICAL & GEOMETRIC UTILITIES (ONWARD SUMMIT ENGINE)
+   MATHEMATICAL & GEOMETRIC UTILITIES (PORTOFIN LEDGER ENGINE)
    ========================================================================== */
 
 function clamp(val: number, min: number, max: number): number {
@@ -91,7 +91,7 @@ function drawGlyphOnCanvas(
     ctx.arc(half, half, arm * 0.42, 0, Math.PI * 2);
     ctx.fill();
   } else {
-    // Arrow glyph
+    // Arrow financial uptick glyph
     ctx.moveTo(half - arm, half + arm);
     ctx.lineTo(half + arm, half - arm);
     ctx.moveTo(half - arm * 0.15, half - arm);
@@ -118,7 +118,7 @@ function InteractiveCanvasField({
   glyph = 'arrow',
   lightColor,
   darkColor,
-  cell = 13,
+  cell = 14,
 }: CanvasFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -162,7 +162,7 @@ function InteractiveCanvasField({
         offCtx.scale(spriteSize / cell, spriteSize / cell);
         offCtx.strokeStyle = color;
         offCtx.fillStyle = color;
-        offCtx.lineWidth = Math.max(1.05, cell * 0.105);
+        offCtx.lineWidth = Math.max(1.1, cell * 0.11);
         offCtx.lineCap = 'square';
         offCtx.lineJoin = 'miter';
         drawGlyphOnCanvas(offCtx, glyph, cell);
@@ -396,7 +396,7 @@ function InteractiveCanvasField({
 }
 
 /* ==========================================================================
-   GEOMETRIC SVG MARKS (ARROW, RING, PLUS)
+   GEOMETRIC SVG MARKS (ARROW, CONCENTRIC RINGS, PLUS LATTICE)
    ========================================================================== */
 
 function BrandArrowGlyph() {
@@ -506,233 +506,57 @@ function ChevronIcon({ open }: { open?: boolean }) {
 }
 
 /* ==========================================================================
-   ALGORITHMIC GENERATIVE DOT PORTRAITS (CORE ASSETS)
+   INTERACTIVE LOCAL-FIRST SECURITY BLUEPRINT (REPLACING SUMMIT MAP)
    ========================================================================== */
 
-function generatePortraitPaths(
-  seedStr: string,
-  cols = 28,
-  rows = 33,
-  cellPitch = 220 / 28
-): string[] {
-  const prng = createPrng(hashString(seedStr));
-  const cx = 0.5 + (prng() - 0.5) * 0.06;
-  const cy = 0.37 + (prng() - 0.5) * 0.04;
-  const rx = 0.145 + prng() * 0.03;
-  const ry = 0.185 + prng() * 0.025;
-  const variant = Math.floor(prng() * 3);
-  const bottomK = 0.4 + prng() * 0.1;
-
-  const lightDir = [(prng() < 0.5 ? 1 : -1) * 0.62, -0.5, 0.6];
-  const lightLen = Math.hypot(lightDir[0], lightDir[1], lightDir[2]);
-
-  const testSphere = (u: number, v: number, ox: number, oy: number, w: number, h: number) => {
-    const nx = (u - ox) / w;
-    const ny = (v - oy) / h;
-    const rSq = nx * nx + ny * ny;
-    const r = Math.sqrt(rSq);
-    const z = Math.sqrt(Math.max(0, 1 - Math.min(1, r) ** 2));
-    const lam = Math.max(0, (nx * lightDir[0] + ny * lightDir[1] + z * lightDir[2]) / lightLen);
-    return { mask: 1 - smoothstep(0.9, 1.04, r), lam };
-  };
-
-  const layers = ['', '', '', ''];
-  const formatNum = (n: number) => +n.toFixed(1);
-
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const u = (c + 0.5) / cols;
-      const v = (r + 0.5) / rows;
-      const main = testSphere(u, v, cx, cy, rx, ry);
-      const sub = variant === 2
-        ? testSphere(u, v, cx, cy + 0.1, rx * 1.32, 0.33)
-        : testSphere(u, v, cx, cy - ry * (variant ? 0.3 : 0.42), rx * (variant ? 1.22 : 1.06), ry * (variant ? 0.86 : 0.7));
-      const body = testSphere(u, v, 0.5, 1.06, bottomK, 0.36);
-
-      let val = 0;
-      let mask = 0;
-      if (main.mask > 0.02 && !(v < cy - ry * 0.45)) {
-        mask = main.mask;
-        val = 0.32 + 0.8 * main.lam;
-      } else if (sub.mask > 0.02) {
-        mask = sub.mask;
-        val = 0.16 + 0.46 * sub.lam;
-      }
-      if (body.mask > mask) {
-        mask = body.mask;
-        val = 0.26 + 0.78 * body.lam;
-      }
-
-      const jitter = (prng() - 0.5) * 0.1;
-      val = mask > 0.02
-        ? clamp(val * (0.35 + 0.65 * mask) + jitter, 0.06, 1)
-        : clamp(0.03 + 0.08 * (1 - v) + jitter * 0.4, 0, 0.14);
-
-      const bucket = Math.min(3, Math.floor(val * 4));
-      const radius = cellPitch * (0.3 + 0.62 * val);
-      const px = formatNum((c + 0.5) * cellPitch);
-      const py = formatNum((r + 0.5) * cellPitch);
-      const rDot = formatNum(radius * 0.35);
-
-      layers[bucket] += `M${px - rDot} ${py}a${rDot} ${rDot} 0 1 0 ${rDot * 2} 0a${rDot} ${rDot} 0 1 0 ${-rDot * 2} 0 `;
-    }
-  }
-
-  return layers;
-}
-
-function GenerativePortrait({
-  seed,
-  uid,
-  index,
-}: {
-  seed: string;
-  uid: string;
-  index: number;
-}) {
-  const layers = useMemo(() => generatePortraitPaths(seed), [seed]);
-  const gradId = `${uid}-port-${index}`;
-
+function InteractiveVaultBlueprint() {
   return (
-    <svg
-      className="ows-svg ows-portrait-svg"
-      viewBox="0 0 220 260"
-      preserveAspectRatio="xMidYMid slice"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0.6" y2="1">
-          <stop offset="0%" stopColor="var(--ows-deep)" />
-          <stop offset="100%" stopColor="var(--ows-mid)" />
-        </linearGradient>
-      </defs>
-      <rect width="220" height="260" fill={`url(#${gradId})`} />
-      <g
-        className="ows-portrait-g"
-        fill="none"
-        stroke="var(--ows-glyph-light)"
-        strokeWidth="1.15"
-        strokeLinecap="square"
-      >
-        {layers.map((pathStr, idx) => (
-          <path
-            key={idx}
-            d={pathStr}
-            className={`ows-pb${idx}`}
-            style={{ opacity: [0.16, 0.42, 0.76, 1][idx] }}
-          />
-        ))}
-      </g>
-    </svg>
-  );
-}
+    <div className="ows-blueprint">
+      <div className="ows-blueprint-grid" aria-hidden="true" />
 
-/* ==========================================================================
-   INTERACTIVE MAP COMPONENT (CUSTODY & LOCATION)
-   ========================================================================== */
-
-function InteractiveMap({ uid, name }: { uid: string; name: string }) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const clipId = `${uid}-map-clip`;
-
-  const streetLines = useMemo(() => {
-    const lines = [];
-    for (let i = -12; i <= 12; i++) {
-      lines.push(
-        <line
-          key={`st-${i}`}
-          x1={-400}
-          y1={i * 30}
-          x2={400}
-          y2={i * 30}
-          className="ows-map-st"
-        />
-      );
-    }
-    for (let j = -6; j <= 6; j++) {
-      lines.push(
-        <line
-          key={`av-${j}`}
-          x1={j * 78}
-          y1={-400}
-          x2={j * 78}
-          y2={400}
-          className="ows-map-av"
-        />
-      );
-    }
-    return lines;
-  }, []);
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const el = mapRef.current;
-    if (!el || e.pointerType === 'touch') return;
-    const rect = el.getBoundingClientRect();
-    const nx = ((e.clientX - rect.left) / rect.width - 0.5) * -14;
-    const ny = ((e.clientY - rect.top) / rect.height - 0.5) * -14;
-    el.style.setProperty('--ows-mx', `${nx.toFixed(1)}px`);
-    el.style.setProperty('--ows-my', `${ny.toFixed(1)}px`);
-  };
-
-  const handlePointerLeave = () => {
-    const el = mapRef.current;
-    if (!el) return;
-    el.style.setProperty('--ows-mx', '0px');
-    el.style.setProperty('--ows-my', '0px');
-  };
-
-  return (
-    <div
-      ref={mapRef}
-      className="ows-map"
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
-    >
-      <svg
-        className="ows-svg ows-map-svg"
-        viewBox="0 0 560 400"
-        preserveAspectRatio="xMidYMid slice"
-        role="img"
-        aria-label={`Peta arsitektur kustodi: ${name}`}
-      >
-        <defs>
-          <clipPath id={clipId}>
-            <rect width="560" height="400" rx="12" />
-          </clipPath>
-        </defs>
-        <g clipPath={`url(#${clipId})`}>
-          <rect width="560" height="400" fill="var(--ows-tint)" />
-          <g className="ows-map-pan">
-            <g transform="translate(300 210) rotate(-29)">
-              {streetLines}
-              <rect x="70" y="-310" width="156" height="210" className="ows-map-park" />
-              <rect x="-170" y="60" width="64" height="48" className="ows-map-park" />
-              <line x1="-400" y1="-260" x2="400" y2="190" className="ows-map-bway" />
-            </g>
-            <path
-              d="M-20 -20H86C70 60 40 120 58 190C76 260 40 330 70 430H-20Z"
-              className="ows-map-water"
-            />
-            <path
-              d="M600 280C540 300 500 340 470 430H600Z"
-              className="ows-map-water"
-            />
-          </g>
-        </g>
-      </svg>
-      <div className="ows-pin" aria-hidden="true">
-        <span className="ows-pin-pulse" />
-        <span className="ows-pin-dot">
-          <SmallArrow size={11} />
+      <div className="ows-blueprint-header">
+        <span className="ows-blueprint-tag">Kedaulatan Data Lokal Peramban</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#94A3B8' }}>
+          AES-GCM · IndexedDB
         </span>
       </div>
-      <div className="ows-pin-label">{name}</div>
+
+      <div className="ows-blueprint-body">
+        <div className="ows-blueprint-node">
+          <span className="ows-blueprint-node-title">1. Peramban Anda</span>
+          <span className="ows-blueprint-node-desc">
+            Penyimpanan portofolio 100% lokal di IndexedDB. Tidak dikirim ke server pusat.
+          </span>
+        </div>
+
+        <div className="ows-blueprint-node">
+          <span className="ows-blueprint-node-title">2. Feed Pasar Publik</span>
+          <span className="ows-blueprint-node-desc">
+            Harga BEI & Kripto dibaca searah (read-only) via Yahoo Finance & CoinGecko.
+          </span>
+        </div>
+
+        <div className="ows-blueprint-node">
+          <span className="ows-blueprint-node-title">3. Server Eksternal</span>
+          <span className="ows-blueprint-node-desc" style={{ color: '#F87171' }}>
+            Nol pelacak analitik. Portofin tidak menjual atau memprofil data kekayaan Anda.
+          </span>
+        </div>
+      </div>
+
+      <div className="ows-blueprint-footer">
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <span className="ows-live-dot" />
+          Status Vault: Kunci Enkripsi Klien Aktif
+        </span>
+        <span style={{ color: '#94A3B8' }}>Kedaulatan Finansial Mandiri</span>
+      </div>
     </div>
   );
 }
 
 /* ==========================================================================
-   DOMAIN DATA: INSTRUMENTS, PROFILES, ASSETS & FAQ
+   PORTOFIN DOMAIN DATA: POSITIONS, PROFILES, ASSET SPECIFICATIONS & FAQ
    ========================================================================== */
 
 interface LedgerRow {
@@ -802,67 +626,71 @@ const INVESTOR_PROFILES = [
     pitch: 'Anda bertransaksi dalam fraksi Satoshi dan Gwei hingga delapan angka di belakang koma. Dapatkan konversi nilai rupiah otomatis tanpa selisih floating point.',
   },
   {
-    role: 'Hybrid Allocator',
-    pitch: 'Portofolio Anda menggabungkan stabilitas dividen perbankan nasional dengan potensi pertumbuhan aset digital. Pantau rasio HHI agar risiko konsentrasi tetap terukur.',
+    role: 'Multi-Asset Allocator',
+    pitch: 'Portofolio Anda menggabungkan stabilitas dividen saham nasional dengan potensi pertumbuhan aset digital. Pantau rasio HHI agar risiko konsentrasi tetap terukur.',
   },
   {
-    role: 'Penganut Privasi',
-    pitch: 'Anda meyakini kunci pribadi Anda adalah aset Anda. Seluruh catatan transaksi tersimpan secara lokal di peramban tanpa kewajiban mendaftar dan tanpa pelacak eksternal.',
+    role: 'Penganut Privasi Finansial',
+    pitch: 'Anda meyakini catatan keuangan pribadi Anda adalah kedaulatan Anda. Seluruh transaksi tersimpan secara lokal di peramban tanpa kewajiban mendaftar dan tanpa pelacak eksternal.',
   },
 ];
 
-const CORE_ASSETS = [
+const ASSET_CLASSES = [
   {
-    ticker: 'BBCA',
-    name: 'Bank Central Asia',
-    role: 'Jangkar Perbankan BEI',
-    bio: 'Pondasi likuiditas dan stabilitas dividen di bursa domestik, dicatat dalam kelipatan 100 lembar per lot.',
+    title: 'Saham Bursa Efek Indonesia (IDX)',
+    badge: '100 LEMBAR / LOT',
+    badgeType: 'idx',
+    desc: 'Aturan resmi bursa domestik: 1 lot tepat setara 100 lembar. Dilengkapi pemantauan dividen tunai dan penyesuaian fraksi harga.',
+    specs: ['Satuan: Kelipatan 100 Lembar', 'Feed: Yahoo Finance IDX', 'Mata Uang: IDR (Rupiah)'],
   },
   {
-    ticker: 'BTC',
-    name: 'Bitcoin',
-    role: 'Aset Moneter Digital',
-    bio: 'Instrumen lindung nilai makro dengan suplai terbatas 21 juta koin dan presisi mutlak 8 angka desimal.',
+    title: 'Aset Kripto Terdesentralisasi',
+    badge: '8 DESIMAL (SATOSHI)',
+    badgeType: 'crypto',
+    desc: 'Mendukung Bitcoin, Ethereum, dan altcoin terkemuka dengan presisi kalkulasi hingga 0,00000001 tanpa eror floating-point.',
+    specs: ['Satuan: Hingga 8 Angka Desimal', 'Feed: CoinGecko API', 'Mata Uang: USD & IDR Real-time'],
   },
   {
-    ticker: 'TLKM',
-    name: 'Telkom Indonesia',
-    role: 'Infrastruktur Telekomunikasi',
-    bio: 'Emiten BUMN telekomunikasi dengan penetrasi data nasional dan histori pembayaran dividen konsisten.',
+    title: 'Reksa Dana & Pasar Uang',
+    badge: 'NILAI AKTIVA BERSIH',
+    badgeType: 'cash',
+    desc: 'Pencatatan unit penyertaan reksa dana pasar uang dan pendapatan tetap untuk menjaga likuiditas bantalan portofolio.',
+    specs: ['Satuan: 4 Angka Unit NAB', 'Karakter: Pertumbuhan Compound', 'Mata Uang: IDR (Rupiah)'],
   },
   {
-    ticker: 'ETH',
-    name: 'Ethereum',
-    role: 'Komputasi Terdesentralisasi',
-    bio: 'Platform kontrak pintar universal yang menopang ekosistem tokenisasi dan keuangan terdesentralisasi dunia.',
+    title: 'Kas & Deposito Berjangka',
+    badge: 'DANA SIAGA (DRY POWDER)',
+    badgeType: 'cash',
+    desc: 'Manajemen kas darurat dan alokasi dana siap belanja untuk mengeksekusi peluang saat bursa mengalami koreksi.',
+    specs: ['Satuan: Valuta Rupiah & Dollar', 'Fungsi: Manajemen Risiko Kas', 'Mata Uang: Multi-Currency'],
   },
 ];
 
 const FAQ_ITEMS = [
   {
-    q: 'Apakah saya wajib membuat akun untuk menggunakan Portofin?',
-    a: 'Tidak. Anda dapat langsung menggunakan mode Sandbox Tamu secara instan. Data disimpan di penyimpanan IndexedDB peramban lokal Anda tanpa login dan tanpa pengumpulan data pribadi.',
+    q: 'Apakah Portofin web app berbayar atau memerlukan langganan?',
+    a: 'Tidak. Portofin 100% gratis digunakan dan bersumber terbuka (open source). Tidak ada biaya tersembunyi, tidak ada fitur berbayar yang dikunci, dan tidak ada iklan komersial.',
+  },
+  {
+    q: 'Mengapa Portofin memilih pendekatan Local-First (Zero-Cloud by Default)?',
+    a: 'Kami meyakini bahwa data kekayaan dan transaksi investasi adalah informasi yang sangat privat. Dengan menyimpannya langsung di IndexedDB peramban lokal Anda, tidak ada risiko kebocoran database pusat.',
   },
   {
     q: 'Bagaimana Portofin menghitung saham Indonesia (BEI)?',
     a: 'Portofin mengikuti standar resmi PT Bursa Efek Indonesia (IDX) di mana 1 lot setara dengan tepat 100 lembar saham. Perhitungan modal dan keuntungan dilakukan pada level per lembar tanpa distorsi.',
   },
   {
-    q: 'Bagaimana aset kripto dicatat tanpa pembulatan desimal?',
-    a: 'Portofin menggunakan mesin kalkulasi fraksional hingga 8 desimal (Satoshi untuk Bitcoin dan Gwei untuk Ethereum), memastikan nilai portofolio Anda akurat hingga satuan terkecil.',
+    q: 'Apakah data saya bisa diekspor atau dipindahkan ke perangkat lain?',
+    a: 'Bisa. Anda dapat mengekspor seluruh riwayat transaksi dan kepemilikan aset dalam format JSON atau CSV kapan saja, atau menghubungkannya ke sinkronisasi Cloud terenkripsi secara opsional.',
   },
   {
-    q: 'Apa itu Indeks Herfindahl-Hirschman (HHI) pada portofolio?',
-    a: 'Indeks HHI mengukur tingkat konsentrasi risiko portofolio Anda. Skor di bawah 1.500 menunjukkan diversifikasi sehat, 1.500 hingga 2.500 konsentrasi moderat, dan di atas 2.500 konsentrasi tinggi.',
-  },
-  {
-    q: 'Apakah saya bisa mengekspor atau memindahkan data saya?',
-    a: 'Ya. Anda memiliki kendali penuh untuk mengekspor seluruh buku besar portofolio dalam format JSON atau CSV standar kapan saja, atau menghubungkannya ke sinkronisasi Cloud aman.',
+    q: 'Apakah Portofin terhubung langsung dengan rekening bank atau sekuritas?',
+    a: 'Tidak. Portofin adalah buku besar independen non-kustodial. Anda mencatat transaksi secara mandiri, sehingga tidak pernah ada risiko peretasan atau akses tidak sah terhadap dana Anda.',
   },
 ];
 
 /* ==========================================================================
-   MAIN LANDING PAGE COMPONENT (PORTFOLIO LEDGER WITH ONWARD SUMMIT THEME)
+   MAIN PAGE: PORTOFIN PORTFOLIO LEDGER
    ========================================================================== */
 
 export default function LandingPage() {
@@ -873,7 +701,6 @@ export default function LandingPage() {
   const uid = useId().replace(/:/g, '');
   const rootRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
-  const ticketRef = useRef<HTMLDivElement>(null);
 
   // States
   const [navSolid, setNavSolid] = useState<boolean>(false);
@@ -886,13 +713,6 @@ export default function LandingPage() {
   const [autoAdvance, setAutoAdvance] = useState<boolean>(true);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [copiedPass, setCopiedPass] = useState<boolean>(false);
-
-  // Countdown timer for next IDX market opening
-  const [countdown, setCountdown] = useState<{ hours: number; minutes: number; seconds: number }>({
-    hours: 14,
-    minutes: 30,
-    seconds: 0,
-  });
 
   const isID = lang === 'id';
   const fxRate = 16400;
@@ -925,31 +745,6 @@ export default function LandingPage() {
     }, 7000);
     return () => clearTimeout(timer);
   }, [activeProfileIndex, autoAdvance, isPaused]);
-
-  // Dynamic countdown timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        let { hours, minutes, seconds } = prev;
-        if (seconds > 0) {
-          seconds--;
-        } else if (minutes > 0) {
-          minutes--;
-          seconds = 59;
-        } else if (hours > 0) {
-          hours--;
-          minutes = 59;
-          seconds = 59;
-        } else {
-          hours = 23;
-          minutes = 59;
-          seconds = 59;
-        }
-        return { hours, minutes, seconds };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Formatter
   const formatMoney = (idrAmount: number) => {
@@ -1048,7 +843,7 @@ export default function LandingPage() {
 
   const handleCopyPass = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText('PTF-8842');
+      navigator.clipboard.writeText('VAULT-PTFN-LOCAL');
       setCopiedPass(true);
       setTimeout(() => setCopiedPass(false), 2000);
     }
@@ -1066,6 +861,7 @@ export default function LandingPage() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         >
+          <img src="/logo.png" alt="Portofin Logo" className="ows-brand-logo-img" />
           <span className="ows-brand-word">Portofin</span>
           <BrandArrowGlyph />
         </Link>
@@ -1119,8 +915,8 @@ export default function LandingPage() {
         <InteractiveCanvasField
           mode="hero"
           glyph="arrow"
-          lightColor="#dbe6ff"
-          darkColor="#3a6be0"
+          lightColor="#BFDBFE"
+          darkColor="#1D4ED8"
           cell={14}
         />
 
@@ -1140,16 +936,16 @@ export default function LandingPage() {
 
           <p className="ows-tagline">
             <span className="ows-tag-line" style={{ '--i': 0 } as React.CSSProperties}>
-              Buku Besar Keuangan Presisi Multi-Aset: Saham BEI & Kripto
+              Buku Besar Keuangan Presisi untuk Investor Indonesia
             </span>
             <span className="ows-tag-line" style={{ '--i': 1 } as React.CSSProperties}>
-              Kustodi Lokal Peramban. Privasi Mandiri Nir-Pelacak.
+              Pantau Saham BEI (Lot) & Kripto dalam Satu Dasbor. Kustodi Lokal Peramban Tanpa Paksaan Registrasi.
             </span>
           </p>
 
           <div className="ows-hero-actions">
             <Link href="/dashboard" className="ows-btn ows-btn--accent">
-              <span>Buka Sandbox Tamu</span>
+              <span>Buka Sandbox Tamu (Tanpa Login)</span>
               <SmallArrow size={12} />
             </Link>
             <button
@@ -1168,7 +964,7 @@ export default function LandingPage() {
                 Sesi Tamu Terdeteksi: <strong>{guestAssetCount} aset</strong> tersimpan aman di peramban ini.
               </span>
               <Link href="/dashboard" className="ows-link" style={{ color: '#FFFFFF', textDecoration: 'underline' }}>
-                Lanjutkan
+                Lanjutkan Dasbor
               </Link>
             </div>
           )}
@@ -1177,14 +973,14 @@ export default function LandingPage() {
 
       {/* Main Content Sections */}
       <main className="ows-main">
-        {/* Section 1: Capabilities (On what to expect) */}
+        {/* Section 1: Core Capabilities */}
         <section className="ows-sec ows-wrap" data-sec="expect">
-          <span className="ows-kicker">Kapabilitas Sistem</span>
+          <span className="ows-kicker">Kapabilitas Inti Portofin</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
             Rekayasa Buku Besar Berstandar Finansial
           </h2>
           <p className="ows-intro ows-rise">
-            Dibangun untuk investor dan pengelola modal yang menolak kompromi akurasi. Menyatukan dinamika pasar modal Indonesia dengan likuiditas aset terdesentralisasi global.
+            Dibangun khusus untuk investor Indonesia yang membutuhkan akurasi mutlak: mengintegrasikan aturan pasar modal BEI dengan presisi desimal aset kripto global.
           </p>
 
           <div className="ows-features">
@@ -1192,9 +988,9 @@ export default function LandingPage() {
               <div className="ows-feature-mark">
                 <GeometricMark kind="arrow" uid={uid} index={0} />
               </div>
-              <h3 className="ows-feature-title">Buku Besar Multi-Aset BEI & Kripto</h3>
+              <h3 className="ows-feature-title">Aturan Lot BEI & Desimal Kripto</h3>
               <p className="ows-feature-text">
-                Saham Indonesia dicatat tepat dalam kelipatan 100 lembar per lot. Aset kripto dikalkulasi dalam presisi 8 desimal penuh tanpa distorsi pembulatan pecahan.
+                Saham Indonesia dicatat tepat dalam kelipatan 100 lembar per lot. Aset kripto dikalkulasi dalam presisi 8 desimal penuh (Satoshi & Gwei) tanpa distorsi pembulatan pecahan.
               </p>
             </article>
 
@@ -1202,9 +998,9 @@ export default function LandingPage() {
               <div className="ows-feature-mark">
                 <GeometricMark kind="ring" uid={uid} index={1} />
               </div>
-              <h3 className="ows-feature-title">Kustodi Lokal Mandiri (Zero-Cloud)</h3>
+              <h3 className="ows-feature-title">Kustodi Lokal Mandiri (Zero-Cloud by Default)</h3>
               <p className="ows-feature-text">
-                Portofolio tersimpan di basis data IndexedDB peramban lokal Anda. Tidak ada kewajiban registrasi, tidak ada analitik pihak ketiga, dan tanpa pelacakan data pribadi.
+                Portofolio tersimpan di basis data IndexedDB peramban lokal Anda. Tidak ada kewajiban registrasi, tidak ada pelacakan pihak ketiga, dan tanpa penjualan data kekayaan pribadi.
               </p>
             </article>
 
@@ -1212,15 +1008,15 @@ export default function LandingPage() {
               <div className="ows-feature-mark">
                 <GeometricMark kind="plus" uid={uid} index={2} />
               </div>
-              <h3 className="ows-feature-title">Telemetri Risiko Portofolio (HHI)</h3>
+              <h3 className="ows-feature-title">Matematika Konsentrasi Portofolio (HHI)</h3>
               <p className="ows-feature-text">
-                Kalkulasi otomatis Indeks Herfindahl-Hirschman untuk mengukur konsentrasi modal secara matematis, dilengkapi simulasi pesanan beli dan jual seketika.
+                Evaluasi diversifikasi modal secara kuantitatif dengan skor Herfindahl-Hirschman Index dan visualisator bobot aset, dilengkapi simulasi pesanan beli dan jual seketika.
               </p>
             </article>
           </div>
         </section>
 
-        {/* Section 2: Investor Profiles (On the guest list) */}
+        {/* Section 2: Investor Profiles */}
         <section
           className="ows-sec ows-wrap"
           data-sec="guests"
@@ -1229,7 +1025,7 @@ export default function LandingPage() {
           onFocus={() => setIsPaused(true)}
           onBlur={() => setIsPaused(false)}
         >
-          <span className="ows-kicker">Untuk Siapa Portofin Dirancang</span>
+          <span className="ows-kicker">Kesesuaian dengan Gaya Investasi Anda</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
             Profil Pengelola Modal
           </h2>
@@ -1273,11 +1069,11 @@ export default function LandingPage() {
           </p>
         </section>
 
-        {/* Section 3: Live Ledger Console & Telemetry (On the trading floor / Agenda) */}
+        {/* Section 3: Live Ledger Simulation & Telemetry */}
         <section className="ows-sec ows-wrap" data-sec="agenda">
           <div className="ows-sec-head">
             <div>
-              <span className="ows-kicker">Telemetri Langsung</span>
+              <span className="ows-kicker">Simulasi Buku Besar Langsung</span>
               <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
                 Buku Besar Posisi & Simulasi Lot
               </h2>
@@ -1378,7 +1174,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Agenda-style Expandable Positions Table */}
+          {/* Expandable Positions Table */}
           <ol className="ows-agenda ows-rise">
             {filteredRows.map((row, idx) => {
               const isOpen = openRowIndex === idx;
@@ -1437,7 +1233,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <Link href="/dashboard" className="ows-link">
-                        <SmallArrow size={11} /> Kelola posisi ini di Dashboard
+                        <SmallArrow size={11} /> Buka dan kelola posisi ini di Dasbor Portofin
                       </Link>
                     </div>
                   </div>
@@ -1447,63 +1243,67 @@ export default function LandingPage() {
           </ol>
         </section>
 
-        {/* Section 4: Core Assets (On stage) */}
-        <section className="ows-sec ows-wrap" data-sec="speakers">
-          <span className="ows-kicker">Alam Semesta Aset</span>
+        {/* Section 4: Supported Asset Universes (Replaces Speakers) */}
+        <section className="ows-sec ows-wrap" data-sec="assets">
+          <span className="ows-kicker">Cakupan Pasar</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
-            Pondasi Instrumen Terpilih
+            Kelas Aset yang Didukung
           </h2>
           <p className="ows-intro ows-rise">
-            Setiap instrumen di Portofin diproses sesuai karakteristik teknis aslinya, tanpa konversi sembrono dan tanpa manipulasi saldo.
+            Setiap instrumen di Portofin diproses sesuai karakteristik teknis aslinya: tanpa konversi sembrono dan tanpa manipulasi saldo.
           </p>
 
-          <ul className="ows-speakers">
-            {CORE_ASSETS.map((asset, idx) => (
-              <li
-                key={asset.ticker}
-                className="ows-speaker ows-rise"
-                style={{ '--d': `${idx * 70}ms` } as React.CSSProperties}
-                tabIndex={0}
-              >
-                <div className="ows-portrait">
-                  <GenerativePortrait seed={asset.ticker} uid={uid} index={idx} />
-                  <p className="ows-bio">{asset.bio}</p>
+          <div className="ows-asset-grid">
+            {ASSET_CLASSES.map((item, idx) => (
+              <article key={idx} className="ows-asset-card ows-rise" style={{ '--d': `${idx * 70}ms` } as React.CSSProperties}>
+                <div className="ows-asset-card-top">
+                  <span className={`ows-asset-badge ${item.badgeType}`}>
+                    {item.badge}
+                  </span>
                 </div>
-                <p className="ows-speaker-name">{asset.name}</p>
-                <p className="ows-speaker-role">{asset.role}</p>
-              </li>
+                <h3 className="ows-asset-card-name">{item.title}</h3>
+                <p className="ows-asset-card-desc">{item.desc}</p>
+                <div className="ows-asset-spec-list">
+                  {item.specs.map((spec, sIdx) => (
+                    <div key={sIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <SmallArrow size={9} />
+                      <span>{spec}</span>
+                    </div>
+                  ))}
+                </div>
+              </article>
             ))}
-          </ul>
+          </div>
         </section>
 
-        {/* Section 5: Custody & Architecture (On location) */}
+        {/* Section 5: Custody & Privacy Architecture (Replaces Event Map) */}
         <section className="ows-sec ows-wrap" data-sec="venue">
           <span className="ows-kicker">Keamanan & Kustodi</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
-            Infrastruktur Lokal Mandiri
+            Infrastruktur Kedaulatan Data Lokal
           </h2>
 
           <div className="ows-venue ows-rise">
             <div className="ows-venue-info">
-              <p className="ows-venue-name">Kedaulatan Data di Peramban Anda</p>
+              <p className="ows-venue-name">Kedaulatan Finansial di Perangkat Anda</p>
               <p className="ows-venue-addr">
                 IndexedDB Local Storage · Web Crypto API AES-GCM
                 <br />
-                Klien Web Pribadi Tanpa Server Pusat
+                Buku Besar Pribadi Tanpa Database Terpusat yang Rentan
               </p>
 
               <ul className="ows-notes">
                 <li>
                   <SmallArrow size={10} />
-                  <span>Kustodi data tersimpan secara lokal dan aman di perangkat pengguna</span>
+                  <span>Kustodi data tersimpan secara lokal dan aman di browser pengguna</span>
                 </li>
                 <li>
                   <SmallArrow size={10} />
-                  <span>Tidak ada pelacakan identitas, analitik pihak ketiga, atau cookies pengintai</span>
+                  <span>Nol pelacakan identitas, analitik pihak ketiga, atau cookies komersial</span>
                 </li>
                 <li>
                   <SmallArrow size={10} />
-                  <span>Dukungan ekspor dan impor portofolio format terbuka (JSON/CSV)</span>
+                  <span>Dukungan ekspor dan impor portofolio format terbuka (JSON/CSV) kapan pun</span>
                 </li>
                 <li>
                   <SmallArrow size={10} />
@@ -1513,7 +1313,7 @@ export default function LandingPage() {
 
               <div className="ows-venue-actions">
                 <Link href="/dashboard" className="ows-btn ows-btn--dark ows-btn--sm">
-                  <span>Buka Ruang Kustodi</span>
+                  <span>Buka Dasbor Portofin</span>
                   <SmallArrow size={10} />
                 </Link>
                 <button
@@ -1527,11 +1327,11 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <InteractiveMap uid={uid} name="Sentra Kustodi Lokal Peramban" />
+            <InteractiveVaultBlueprint />
           </div>
         </section>
 
-        {/* Section 6: FAQ (On your mind) */}
+        {/* Section 6: FAQ */}
         <section className="ows-sec ows-wrap" data-sec="faq">
           <span className="ows-kicker">Transparansi & Bantuan</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
@@ -1565,13 +1365,13 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Section 7: Access Pass & Registration (The Authentic Ticket Band) */}
+        {/* Section 7: Access Pass & Registration (The Portofin Local Vault Card) */}
         <section className="ows-band" data-sec="register">
           <InteractiveCanvasField
             mode="band"
             glyph="arrow"
-            lightColor="#dbe6ff"
-            darkColor="#3a6be0"
+            lightColor="#BFDBFE"
+            darkColor="#1D4ED8"
             cell={15}
           />
 
@@ -1584,20 +1384,16 @@ export default function LandingPage() {
               </p>
 
               <div className="ows-count" aria-live="off">
-                <span className="ows-count-label">Pasar Modal BEI Buka Dalam</span>
-                <div className="ows-count-cells">
-                  <span className="ows-count-cell">
-                    <span className="ows-count-v">{padZero(countdown.hours)}</span>
-                    <span className="ows-count-k">Jam</span>
-                  </span>
-                  <span className="ows-count-cell">
-                    <span className="ows-count-v">{padZero(countdown.minutes)}</span>
-                    <span className="ows-count-k">Menit</span>
-                  </span>
-                  <span className="ows-count-cell">
-                    <span className="ows-count-v">{padZero(countdown.seconds)}</span>
-                    <span className="ows-count-k">Detik</span>
-                  </span>
+                <span className="ows-count-label">Telemetri Pasar & Keamanan Klien</span>
+                <div className="ows-count-cells" style={{ marginTop: '12px' }}>
+                  <div className="ows-count-cell" style={{ flex: 1, padding: '12px 14px', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#93C5FD', fontFamily: 'var(--font-mono)' }}>Bursa Saham BEI</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF', marginTop: '4px' }}>Sesi Pasar Aktif</span>
+                  </div>
+                  <div className="ows-count-cell" style={{ flex: 1, padding: '12px 14px', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#93C5FD', fontFamily: 'var(--font-mono)' }}>Pasar Kripto Global</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#34D399', marginTop: '4px' }}>24/7/365 Real-Time</span>
+                  </div>
                 </div>
               </div>
 
@@ -1614,12 +1410,12 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Authentic Physical-Digital Ticket */}
-            <div className="ows-card" ref={ticketRef}>
+            {/* Portofin Local Vault Pass */}
+            <div className="ows-card">
               <div className="ows-ticket" role="status">
                 <div className="ows-ticket-top">
-                  <span className="ows-kicker">Tiket Akses Portofin</span>
-                  <p className="ows-ticket-name">Tiket Tamu Mandiri</p>
+                  <span className="ows-kicker">Kartu Vault Portofin</span>
+                  <p className="ows-ticket-name">Tiket Vault Mandiri</p>
                   <p className="ows-ticket-meta">
                     Kustodi IndexedDB · Tanpa Registrasi · Presisi BEI & Kripto
                   </p>
@@ -1629,14 +1425,14 @@ export default function LandingPage() {
 
                 <div className="ows-ticket-bot">
                   <div>
-                    <span className="ows-ticket-label">Kode Akses Lokal</span>
-                    <span className="ows-ticket-code">PTF-8842</span>
+                    <span className="ows-ticket-label">ID Vault Lokal</span>
+                    <span className="ows-ticket-code">VAULT-PTFN-LOCAL</span>
                   </div>
 
                   <div className="ows-ticket-perks">
                     <div className="ows-ticket-perk">
                       <SmallArrow size={10} />
-                      <span>Kalkulasi lot saham otomatis (100 lembar)</span>
+                      <span>Kalkulasi lot saham otomatis (100 lembar per lot)</span>
                     </div>
                     <div className="ows-ticket-perk">
                       <SmallArrow size={10} />
@@ -1662,7 +1458,7 @@ export default function LandingPage() {
                       className="ows-link"
                       onClick={handleCopyPass}
                     >
-                      {copiedPass ? 'Kode Tersalin!' : 'Salin Kode Tiket'}
+                      {copiedPass ? 'ID Vault Tersalin!' : 'Salin ID Vault'}
                     </button>
                   </div>
                 </div>
@@ -1676,14 +1472,15 @@ export default function LandingPage() {
       <footer className="ows-foot">
         <div className="ows-wrap ows-foot-grid">
           <div className="ows-brand ows-brand--foot">
+            <img src="/logo.png" alt="Portofin Logo" className="ows-brand-logo-img" />
             <span className="ows-brand-word">Portofin</span>
             <BrandArrowGlyph />
           </div>
 
           <nav className="ows-foot-links" aria-label="Footer Navigation">
-            <Link href="/dashboard">Dashboard</Link>
-            <Link href="/dashboard/analytics">Analisis</Link>
-            <Link href="/dashboard/settings">Pengaturan</Link>
+            <Link href="/dashboard">Portofolio</Link>
+            <Link href="/ai-advisor">AI Advisor</Link>
+            <Link href="/transactions">Riwayat Transaksi</Link>
             <button
               type="button"
               onClick={() => openAuthModal('signin')}
@@ -1694,7 +1491,7 @@ export default function LandingPage() {
           </nav>
 
           <p className="ows-foot-note">
-            © 2026 Portofin Ledger. Buku besar keuangan presisi multi-aset untuk saham BEI dan aset digital. Bebas biaya dan bersumber terbuka.
+            © 2026 Portofin. Buku besar keuangan presisi multi-aset untuk saham BEI dan aset digital. Bebas biaya dan bersumber terbuka.
           </p>
         </div>
 
