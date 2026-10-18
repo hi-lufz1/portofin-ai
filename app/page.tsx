@@ -1,104 +1,971 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useId } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePortfolio } from '@/contexts/PortfolioContext';
-import {
-  CloudUpload,
-  Database,
-  Layers,
-  Scale,
-  RotateCcw,
-  Plus,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
-  HardDrive,
-  Copy,
-  Check,
-  TrendingUp,
-  Coins,
-  Wallet,
-  Compass,
-} from 'lucide-react';
+
+/* ==========================================================================
+   MATHEMATICAL & GEOMETRIC UTILITIES (ONWARD SUMMIT ENGINE)
+   ========================================================================== */
+
+function clamp(val: number, min: number, max: number): number {
+  return val < min ? min : val > max ? max : val;
+}
+
+function smoothstep(min: number, max: number, val: number): number {
+  const x = clamp((val - min) / (max - min), 0, 1);
+  return x * x * (3 - 2 * x);
+}
+
+function hashString(str: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function createPrng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 1831565813) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function wrapAngle(rad: number): number {
+  const twoPi = Math.PI * 2;
+  let res = (((rad + Math.PI) % twoPi) + twoPi) % twoPi - Math.PI;
+  if (res === -Math.PI) res = Math.PI;
+  return res;
+}
+
+function calcFieldDensity(
+  mode: 'hero' | 'band',
+  normX: number,
+  normY: number,
+  aspect: number
+): [number, number] {
+  if (mode === 'band') {
+    const fadeY = smoothstep(0, 0.14, normY) * smoothstep(0, 0.14, 1 - normY);
+    const fadeX = 0.25 + 0.75 * smoothstep(0.1, 0.8, normX);
+    return [0.55 * fadeY * fadeX, 0];
+  }
+  const topFade = (0.3 + 0.7 * smoothstep(0.02, 0.48, normY)) * (1 - smoothstep(0.5, 0.74, normY));
+  const botFade = smoothstep(0.54, 0.72, normY) * (1 - smoothstep(0.8, 0.985, normY));
+  const dx = (normX - 0.5) * aspect;
+  const dy = (normY - 0.47) * 1.25;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const radialMask = 0.1 + 0.9 * smoothstep(0.1, 0.4, dist);
+  return [topFade * radialMask, botFade * radialMask * 0.9];
+}
+
+function padZero(val: number): string {
+  return val < 10 ? '0' + val : String(val);
+}
+
+function drawGlyphOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  glyph: 'arrow' | 'ring' | 'plus' | 'dot',
+  size: number
+) {
+  const arm = size * 0.31;
+  const half = size / 2;
+  ctx.beginPath();
+  if (glyph === 'plus') {
+    ctx.moveTo(half - arm, half);
+    ctx.lineTo(half + arm, half);
+    ctx.moveTo(half, half - arm);
+    ctx.lineTo(half, half + arm);
+    ctx.stroke();
+  } else if (glyph === 'ring') {
+    ctx.arc(half, half, arm * 0.78, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (glyph === 'dot') {
+    ctx.arc(half, half, arm * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // Arrow glyph
+    ctx.moveTo(half - arm, half + arm);
+    ctx.lineTo(half + arm, half - arm);
+    ctx.moveTo(half - arm * 0.15, half - arm);
+    ctx.lineTo(half + arm, half - arm);
+    ctx.lineTo(half + arm, half + arm * 0.15);
+    ctx.stroke();
+  }
+}
+
+/* ==========================================================================
+   INTERACTIVE CANVAS FIELD (HERO & BAND)
+   ========================================================================== */
+
+interface CanvasFieldProps {
+  mode: 'hero' | 'band';
+  glyph?: 'arrow' | 'ring' | 'plus' | 'dot';
+  lightColor: string;
+  darkColor: string;
+  cell?: number;
+}
+
+function InteractiveCanvasField({
+  mode,
+  glyph = 'arrow',
+  lightColor,
+  darkColor,
+  cell = 13,
+}: CanvasFieldProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    const parent = container?.parentElement;
+    if (!container || !canvas || !parent) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let totalPoints = 0;
+    let posX = new Float32Array(0);
+    let posY = new Float32Array(0);
+    let densityLight = new Float32Array(0);
+    let densityDark = new Float32Array(0);
+    let randomNoise = new Float32Array(0);
+    let currentAngle = new Float32Array(0);
+    let currentScale = new Float32Array(0);
+    let lightSprite: HTMLCanvasElement | null = null;
+    let darkSprite: HTMLCanvasElement | null = null;
+
+    const pointer = { x: 0, y: 0, active: false };
+    const ripples: Array<{ x: number; y: number; t0: number }> = [];
+    let rafId = 0;
+    let isVisible = true;
+    const halfCell = cell / 2;
+
+    const renderSprite = (color: string): HTMLCanvasElement => {
+      const offscreen = document.createElement('canvas');
+      const spriteSize = Math.ceil(cell * dpr * 2);
+      offscreen.width = spriteSize;
+      offscreen.height = spriteSize;
+      const offCtx = offscreen.getContext('2d');
+      if (offCtx) {
+        offCtx.scale(spriteSize / cell, spriteSize / cell);
+        offCtx.strokeStyle = color;
+        offCtx.fillStyle = color;
+        offCtx.lineWidth = Math.max(1.05, cell * 0.105);
+        offCtx.lineCap = 'square';
+        offCtx.lineJoin = 'miter';
+        drawGlyphOnCanvas(offCtx, glyph, cell);
+      }
+      return offscreen;
+    };
+
+    const resize = () => {
+      const rect = container.getBoundingClientRect();
+      width = Math.max(1, rect.width);
+      height = Math.max(1, rect.height);
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+
+      const cols = Math.ceil(width / cell) + 1;
+      const rows = Math.ceil(height / cell) + 1;
+      totalPoints = cols * rows;
+
+      posX = new Float32Array(totalPoints);
+      posY = new Float32Array(totalPoints);
+      densityLight = new Float32Array(totalPoints);
+      densityDark = new Float32Array(totalPoints);
+      randomNoise = new Float32Array(totalPoints);
+      currentAngle = new Float32Array(totalPoints);
+      currentScale = new Float32Array(totalPoints).fill(1);
+
+      const offsetX = (width - (cols - 1) * cell) / 2;
+      const offsetY = (height - (rows - 1) * cell) / 2;
+      const prng = createPrng(cols * 977 + rows);
+
+      for (let r = 0, idx = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++, idx++) {
+          const px = offsetX + c * cell;
+          const py = offsetY + r * cell;
+          const [lD, dD] = calcFieldDensity(mode, px / width, py / height, width / height);
+          posX[idx] = px;
+          posY[idx] = py;
+          densityLight[idx] = lD;
+          densityDark[idx] = dD;
+          randomNoise[idx] = 0.5 + 0.5 * prng();
+        }
+      }
+      lightSprite = renderSprite(lightColor);
+      darkSprite = renderSprite(darkColor);
+    };
+
+    const render = (time: number): boolean => {
+      if (!lightSprite || !darkSprite) return false;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const pointerRadius = 150;
+      const radiusSq = pointerRadius * pointerRadius;
+
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        if (time - ripples[i].t0 > 1900) ripples.splice(i, 1);
+      }
+
+      let hasActiveDynamics = ripples.length > 0;
+
+      for (let i = 0; i < totalPoints; i++) {
+        const dL = densityLight[i];
+        const dD = densityDark[i];
+        if (dL + dD < 0.012) continue;
+
+        const px = posX[i];
+        const py = posY[i];
+        let targetAngle = 0;
+        let targetScale = 1;
+        let boostAlpha = 0;
+
+        if (pointer.active) {
+          const dx = px - pointer.x;
+          const dy = py - pointer.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < radiusSq) {
+            let proximity = 1 - Math.sqrt(distSq) / pointerRadius;
+            proximity = proximity * proximity * (3 - 2 * proximity);
+            targetAngle = wrapAngle(Math.atan2(dy, dx) + Math.PI / 4) * proximity;
+            targetScale = 1 + 0.75 * proximity;
+            boostAlpha = 0.55 * proximity;
+          }
+        }
+
+        for (const rip of ripples) {
+          const elapsed = time - rip.t0;
+          const dx = px - rip.x;
+          const dy = py - rip.y;
+          const distWave = Math.abs(Math.sqrt(dx * dx + dy * dy) - elapsed * 0.62);
+          if (distWave < 56) {
+            const waveFactor = (1 - distWave / 56) * (1 - elapsed / 1900);
+            targetScale += 0.9 * waveFactor;
+            boostAlpha += 0.7 * waveFactor;
+            targetAngle += wrapAngle(Math.atan2(dy, dx) + Math.PI / 4) * waveFactor * 0.6;
+          }
+        }
+
+        currentAngle[i] += (targetAngle - currentAngle[i]) * 0.12;
+        currentScale[i] += (targetScale - currentScale[i]) * 0.16;
+
+        if (
+          Math.abs(currentAngle[i] - targetAngle) > 0.004 ||
+          Math.abs(currentScale[i] - targetScale) > 0.004
+        ) {
+          hasActiveDynamics = true;
+        }
+
+        const waveOscillation = 0.8 + 0.2 * Math.sin((px + py * 0.8) * 0.011 - time * 0.0012);
+        const noiseAlpha = randomNoise[i] * waveOscillation;
+        const totalDensity = dL + dD;
+        const alphaL = clamp(dL * noiseAlpha + boostAlpha * (dL / totalDensity) * 0.7, 0, 1);
+        const alphaD = clamp(dD * noiseAlpha + boostAlpha * (dD / totalDensity) * 0.7, 0, 1);
+        const ang = currentAngle[i];
+        const sc = currentScale[i];
+
+        if (Math.abs(ang) < 0.003 && Math.abs(sc - 1) < 0.003) {
+          ctx.setTransform(dpr, 0, 0, dpr, dpr * px, dpr * py);
+        } else {
+          const cosA = Math.cos(ang) * sc * dpr;
+          const sinA = Math.sin(ang) * sc * dpr;
+          ctx.setTransform(cosA, sinA, -sinA, cosA, dpr * px, dpr * py);
+        }
+
+        if (alphaL > 0.01) {
+          ctx.globalAlpha = alphaL;
+          ctx.drawImage(lightSprite, -halfCell, -halfCell, cell, cell);
+        }
+        if (alphaD > 0.01) {
+          ctx.globalAlpha = alphaD;
+          ctx.drawImage(darkSprite, -halfCell, -halfCell, cell, cell);
+        }
+      }
+      ctx.globalAlpha = 1;
+      return hasActiveDynamics;
+    };
+
+    const loop = (t: number) => {
+      rafId = 0;
+      render(t);
+      if (isVisible) {
+        rafId = requestAnimationFrame(loop);
+      }
+    };
+
+    const kick = () => {
+      if (!rafId && isVisible) {
+        rafId = requestAnimationFrame(loop);
+      }
+    };
+
+    resize();
+    render(performance.now());
+
+    const ro = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => {
+          resize();
+          render(performance.now());
+        })
+      : null;
+    ro?.observe(container);
+
+    const io = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver((entries) => {
+          isVisible = entries.some((e) => e.isIntersecting);
+          if (isVisible) {
+            kick();
+          } else if (rafId) {
+            cancelAnimationFrame(rafId);
+            rafId = 0;
+          }
+        })
+      : null;
+    io?.observe(container);
+
+    const getLocalPos = (e: PointerEvent) => {
+      const rect = container.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return;
+      const p = getLocalPos(e);
+      pointer.x = p.x;
+      pointer.y = p.y;
+      pointer.active = true;
+    };
+
+    const handlePointerLeave = () => {
+      pointer.active = false;
+    };
+
+    const handlePointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('a, button, input, select, textarea, label')) return;
+      const p = getLocalPos(e);
+      ripples.push({ x: p.x, y: p.y, t0: performance.now() });
+      if (ripples.length > 4) ripples.shift();
+    };
+
+    parent.addEventListener('pointermove', handlePointerMove);
+    parent.addEventListener('pointerleave', handlePointerLeave);
+    parent.addEventListener('pointerdown', handlePointerDown);
+
+    const initTimer = mode === 'hero'
+      ? setTimeout(() => {
+          ripples.push({ x: width / 2, y: height * 0.47, t0: performance.now() });
+        }, 350)
+      : 0;
+
+    kick();
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(initTimer);
+      ro?.disconnect();
+      io?.disconnect();
+      parent.removeEventListener('pointermove', handlePointerMove);
+      parent.removeEventListener('pointerleave', handlePointerLeave);
+      parent.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [mode, glyph, lightColor, darkColor, cell]);
+
+  return (
+    <div ref={containerRef} className="ows-field" aria-hidden="true">
+      <canvas ref={canvasRef} className="ows-canvas" />
+    </div>
+  );
+}
+
+/* ==========================================================================
+   GEOMETRIC SVG MARKS (ARROW, RING, PLUS)
+   ========================================================================== */
+
+function BrandArrowGlyph() {
+  return (
+    <svg className="ows-svg" width="17" height="14" viewBox="0 0 17 14" aria-hidden="true">
+      <path
+        d="M1 13.2c4.6-.4 8.4-2.6 11-6.4L15.6 1M9.6 1.4h6v6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function GeometricMark({
+  kind,
+  uid,
+  index,
+}: {
+  kind: 'arrow' | 'ring' | 'plus';
+  uid: string;
+  index: number;
+}) {
+  const gradId = `${uid}-mark-${index}`;
+  const gradUrl = `url(#${gradId})`;
+
+  return (
+    <svg
+      className="ows-svg ows-mark"
+      data-kind={kind}
+      width="76"
+      height="76"
+      viewBox="0 0 76 76"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stopColor="var(--ows-icon-a)" />
+          <stop offset="100%" stopColor="var(--ows-icon-b)" />
+        </linearGradient>
+      </defs>
+      <g className="ows-mark-g">
+        {kind === 'arrow' && (
+          <path
+            d="M22 6H70V54L57 41V27.5L17.2 67.3L8.7 58.8L48.5 19H35Z"
+            fill={gradUrl}
+          />
+        )}
+        {kind === 'ring' && (
+          <circle
+            cx="38"
+            cy="38"
+            r="25"
+            fill="none"
+            stroke={gradUrl}
+            strokeWidth="15"
+          />
+        )}
+        {kind === 'plus' && (
+          <path
+            d="M31 4H45V31H72V45H45V72H31V45H4V31H31Z"
+            fill={gradUrl}
+          />
+        )}
+      </g>
+    </svg>
+  );
+}
+
+function SmallArrow({ size = 12 }: { size?: number }) {
+  return (
+    <svg className="ows-svg" width={size} height={size} viewBox="0 0 12 12" aria-hidden="true">
+      <path
+        d="M2.5 9.5 9.5 2.5M4 2.5h5.5V8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="square"
+      />
+    </svg>
+  );
+}
+
+function ChevronIcon({ open }: { open?: boolean }) {
+  return (
+    <svg
+      className="ows-svg ows-chev"
+      data-open={open ? '' : undefined}
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.5 4.5 6 8l3.5-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/* ==========================================================================
+   ALGORITHMIC GENERATIVE DOT PORTRAITS (CORE ASSETS)
+   ========================================================================== */
+
+function generatePortraitPaths(
+  seedStr: string,
+  cols = 28,
+  rows = 33,
+  cellPitch = 220 / 28
+): string[] {
+  const prng = createPrng(hashString(seedStr));
+  const cx = 0.5 + (prng() - 0.5) * 0.06;
+  const cy = 0.37 + (prng() - 0.5) * 0.04;
+  const rx = 0.145 + prng() * 0.03;
+  const ry = 0.185 + prng() * 0.025;
+  const variant = Math.floor(prng() * 3);
+  const bottomK = 0.4 + prng() * 0.1;
+
+  const lightDir = [(prng() < 0.5 ? 1 : -1) * 0.62, -0.5, 0.6];
+  const lightLen = Math.hypot(lightDir[0], lightDir[1], lightDir[2]);
+
+  const testSphere = (u: number, v: number, ox: number, oy: number, w: number, h: number) => {
+    const nx = (u - ox) / w;
+    const ny = (v - oy) / h;
+    const rSq = nx * nx + ny * ny;
+    const r = Math.sqrt(rSq);
+    const z = Math.sqrt(Math.max(0, 1 - Math.min(1, r) ** 2));
+    const lam = Math.max(0, (nx * lightDir[0] + ny * lightDir[1] + z * lightDir[2]) / lightLen);
+    return { mask: 1 - smoothstep(0.9, 1.04, r), lam };
+  };
+
+  const layers = ['', '', '', ''];
+  const formatNum = (n: number) => +n.toFixed(1);
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const u = (c + 0.5) / cols;
+      const v = (r + 0.5) / rows;
+      const main = testSphere(u, v, cx, cy, rx, ry);
+      const sub = variant === 2
+        ? testSphere(u, v, cx, cy + 0.1, rx * 1.32, 0.33)
+        : testSphere(u, v, cx, cy - ry * (variant ? 0.3 : 0.42), rx * (variant ? 1.22 : 1.06), ry * (variant ? 0.86 : 0.7));
+      const body = testSphere(u, v, 0.5, 1.06, bottomK, 0.36);
+
+      let val = 0;
+      let mask = 0;
+      if (main.mask > 0.02 && !(v < cy - ry * 0.45)) {
+        mask = main.mask;
+        val = 0.32 + 0.8 * main.lam;
+      } else if (sub.mask > 0.02) {
+        mask = sub.mask;
+        val = 0.16 + 0.46 * sub.lam;
+      }
+      if (body.mask > mask) {
+        mask = body.mask;
+        val = 0.26 + 0.78 * body.lam;
+      }
+
+      const jitter = (prng() - 0.5) * 0.1;
+      val = mask > 0.02
+        ? clamp(val * (0.35 + 0.65 * mask) + jitter, 0.06, 1)
+        : clamp(0.03 + 0.08 * (1 - v) + jitter * 0.4, 0, 0.14);
+
+      const bucket = Math.min(3, Math.floor(val * 4));
+      const radius = cellPitch * (0.3 + 0.62 * val);
+      const px = formatNum((c + 0.5) * cellPitch);
+      const py = formatNum((r + 0.5) * cellPitch);
+      const rDot = formatNum(radius * 0.35);
+
+      layers[bucket] += `M${px - rDot} ${py}a${rDot} ${rDot} 0 1 0 ${rDot * 2} 0a${rDot} ${rDot} 0 1 0 ${-rDot * 2} 0 `;
+    }
+  }
+
+  return layers;
+}
+
+function GenerativePortrait({
+  seed,
+  uid,
+  index,
+}: {
+  seed: string;
+  uid: string;
+  index: number;
+}) {
+  const layers = useMemo(() => generatePortraitPaths(seed), [seed]);
+  const gradId = `${uid}-port-${index}`;
+
+  return (
+    <svg
+      className="ows-svg ows-portrait-svg"
+      viewBox="0 0 220 260"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0%" stopColor="var(--ows-deep)" />
+          <stop offset="100%" stopColor="var(--ows-mid)" />
+        </linearGradient>
+      </defs>
+      <rect width="220" height="260" fill={`url(#${gradId})`} />
+      <g
+        className="ows-portrait-g"
+        fill="none"
+        stroke="var(--ows-glyph-light)"
+        strokeWidth="1.15"
+        strokeLinecap="square"
+      >
+        {layers.map((pathStr, idx) => (
+          <path
+            key={idx}
+            d={pathStr}
+            className={`ows-pb${idx}`}
+            style={{ opacity: [0.16, 0.42, 0.76, 1][idx] }}
+          />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+/* ==========================================================================
+   INTERACTIVE MAP COMPONENT (CUSTODY & LOCATION)
+   ========================================================================== */
+
+function InteractiveMap({ uid, name }: { uid: string; name: string }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const clipId = `${uid}-map-clip`;
+
+  const streetLines = useMemo(() => {
+    const lines = [];
+    for (let i = -12; i <= 12; i++) {
+      lines.push(
+        <line
+          key={`st-${i}`}
+          x1={-400}
+          y1={i * 30}
+          x2={400}
+          y2={i * 30}
+          className="ows-map-st"
+        />
+      );
+    }
+    for (let j = -6; j <= 6; j++) {
+      lines.push(
+        <line
+          key={`av-${j}`}
+          x1={j * 78}
+          y1={-400}
+          x2={j * 78}
+          y2={400}
+          className="ows-map-av"
+        />
+      );
+    }
+    return lines;
+  }, []);
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = mapRef.current;
+    if (!el || e.pointerType === 'touch') return;
+    const rect = el.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / rect.width - 0.5) * -14;
+    const ny = ((e.clientY - rect.top) / rect.height - 0.5) * -14;
+    el.style.setProperty('--ows-mx', `${nx.toFixed(1)}px`);
+    el.style.setProperty('--ows-my', `${ny.toFixed(1)}px`);
+  };
+
+  const handlePointerLeave = () => {
+    const el = mapRef.current;
+    if (!el) return;
+    el.style.setProperty('--ows-mx', '0px');
+    el.style.setProperty('--ows-my', '0px');
+  };
+
+  return (
+    <div
+      ref={mapRef}
+      className="ows-map"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
+      <svg
+        className="ows-svg ows-map-svg"
+        viewBox="0 0 560 400"
+        preserveAspectRatio="xMidYMid slice"
+        role="img"
+        aria-label={`Peta arsitektur kustodi: ${name}`}
+      >
+        <defs>
+          <clipPath id={clipId}>
+            <rect width="560" height="400" rx="12" />
+          </clipPath>
+        </defs>
+        <g clipPath={`url(#${clipId})`}>
+          <rect width="560" height="400" fill="var(--ows-tint)" />
+          <g className="ows-map-pan">
+            <g transform="translate(300 210) rotate(-29)">
+              {streetLines}
+              <rect x="70" y="-310" width="156" height="210" className="ows-map-park" />
+              <rect x="-170" y="60" width="64" height="48" className="ows-map-park" />
+              <line x1="-400" y1="-260" x2="400" y2="190" className="ows-map-bway" />
+            </g>
+            <path
+              d="M-20 -20H86C70 60 40 120 58 190C76 260 40 330 70 430H-20Z"
+              className="ows-map-water"
+            />
+            <path
+              d="M600 280C540 300 500 340 470 430H600Z"
+              className="ows-map-water"
+            />
+          </g>
+        </g>
+      </svg>
+      <div className="ows-pin" aria-hidden="true">
+        <span className="ows-pin-pulse" />
+        <span className="ows-pin-dot">
+          <SmallArrow size={11} />
+        </span>
+      </div>
+      <div className="ows-pin-label">{name}</div>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   DOMAIN DATA: INSTRUMENTS, PROFILES, ASSETS & FAQ
+   ========================================================================== */
 
 interface LedgerRow {
   ticker: string;
   name: string;
   market: 'IDX' | 'CRYPTO';
+  category: string;
   lots?: number;
   sharesOrUnits: number;
   avgBuyIdr: number;
   marketPriceIdr: number;
+  description: string;
 }
 
-const BASE_LEDGER_ROWS: LedgerRow[] = [
+const BASE_LEDGER: LedgerRow[] = [
   {
     ticker: 'BBCA',
     name: 'Bank Central Asia Tbk',
     market: 'IDX',
+    category: 'Perbankan Konsumer',
     lots: 50,
     sharesOrUnits: 5000,
     avgBuyIdr: 9000,
     marketPriceIdr: 9850,
+    description: 'Saham perbankan defensif kapitalisasi terbesar di Bursa Efek Indonesia. Satuan 100 lembar per lot terverifikasi tanpa pembulatan pecahan.',
   },
   {
     ticker: 'BTC',
     name: 'Bitcoin',
     market: 'CRYPTO',
+    category: 'Aset Moneter Digital',
     sharesOrUnits: 0.042,
     avgBuyIdr: 920000000,
     marketPriceIdr: 1120000000,
+    description: 'Penyimpan nilai desentralistik dengan presisi kalkulasi hingga 8 desimal (Satoshi). Terintegrasi dengan penilaian kurs rupiah real-time.',
   },
   {
     ticker: 'TLKM',
     name: 'Telkom Indonesia Tbk',
     market: 'IDX',
+    category: 'Infrastruktur Telekomunikasi',
     lots: 100,
     sharesOrUnits: 10000,
     avgBuyIdr: 2950,
     marketPriceIdr: 3180,
+    description: 'Infrastruktur telekomunikasi digital nasional dengan arus dividen tunai stabil dan volatilitas pasar moderat.',
   },
   {
     ticker: 'ETH',
     name: 'Ethereum',
     market: 'CRYPTO',
+    category: 'Komputasi Cerdas Terdesentralisasi',
     sharesOrUnits: 0.45,
     avgBuyIdr: 40000000,
     marketPriceIdr: 45600000,
+    description: 'Protokol komputasi smart contract global dengan dukungan staking yield telemetry dan kalkulasi fraksional tanpa distorsi.',
   },
 ];
+
+const INVESTOR_PROFILES = [
+  {
+    role: 'Investor Saham BEI',
+    pitch: 'Anda fokus membangun akumulasi lot saham berfundamental prima di Bursa Efek Indonesia. Kelola dividen, pantau harga per lembar secara presisi, dan hindari distorsi pembulatan lot.',
+  },
+  {
+    role: 'Trader Kripto',
+    pitch: 'Anda bertransaksi dalam fraksi Satoshi dan Gwei hingga delapan angka di belakang koma. Dapatkan konversi nilai rupiah otomatis tanpa selisih floating point.',
+  },
+  {
+    role: 'Hybrid Allocator',
+    pitch: 'Portofolio Anda menggabungkan stabilitas dividen perbankan nasional dengan potensi pertumbuhan aset digital. Pantau rasio HHI agar risiko konsentrasi tetap terukur.',
+  },
+  {
+    role: 'Penganut Privasi',
+    pitch: 'Anda meyakini kunci pribadi Anda adalah aset Anda. Seluruh catatan transaksi tersimpan secara lokal di peramban tanpa kewajiban mendaftar dan tanpa pelacak eksternal.',
+  },
+];
+
+const CORE_ASSETS = [
+  {
+    ticker: 'BBCA',
+    name: 'Bank Central Asia',
+    role: 'Jangkar Perbankan BEI',
+    bio: 'Pondasi likuiditas dan stabilitas dividen di bursa domestik, dicatat dalam kelipatan 100 lembar per lot.',
+  },
+  {
+    ticker: 'BTC',
+    name: 'Bitcoin',
+    role: 'Aset Moneter Digital',
+    bio: 'Instrumen lindung nilai makro dengan suplai terbatas 21 juta koin dan presisi mutlak 8 angka desimal.',
+  },
+  {
+    ticker: 'TLKM',
+    name: 'Telkom Indonesia',
+    role: 'Infrastruktur Telekomunikasi',
+    bio: 'Emiten BUMN telekomunikasi dengan penetrasi data nasional dan histori pembayaran dividen konsisten.',
+  },
+  {
+    ticker: 'ETH',
+    name: 'Ethereum',
+    role: 'Komputasi Terdesentralisasi',
+    bio: 'Platform kontrak pintar universal yang menopang ekosistem tokenisasi dan keuangan terdesentralisasi dunia.',
+  },
+];
+
+const FAQ_ITEMS = [
+  {
+    q: 'Apakah saya wajib membuat akun untuk menggunakan Portofin?',
+    a: 'Tidak. Anda dapat langsung menggunakan mode Sandbox Tamu secara instan. Data disimpan di penyimpanan IndexedDB peramban lokal Anda tanpa login dan tanpa pengumpulan data pribadi.',
+  },
+  {
+    q: 'Bagaimana Portofin menghitung saham Indonesia (BEI)?',
+    a: 'Portofin mengikuti standar resmi PT Bursa Efek Indonesia (IDX) di mana 1 lot setara dengan tepat 100 lembar saham. Perhitungan modal dan keuntungan dilakukan pada level per lembar tanpa distorsi.',
+  },
+  {
+    q: 'Bagaimana aset kripto dicatat tanpa pembulatan desimal?',
+    a: 'Portofin menggunakan mesin kalkulasi fraksional hingga 8 desimal (Satoshi untuk Bitcoin dan Gwei untuk Ethereum), memastikan nilai portofolio Anda akurat hingga satuan terkecil.',
+  },
+  {
+    q: 'Apa itu Indeks Herfindahl-Hirschman (HHI) pada portofolio?',
+    a: 'Indeks HHI mengukur tingkat konsentrasi risiko portofolio Anda. Skor di bawah 1.500 menunjukkan diversifikasi sehat, 1.500 hingga 2.500 konsentrasi moderat, dan di atas 2.500 konsentrasi tinggi.',
+  },
+  {
+    q: 'Apakah saya bisa mengekspor atau memindahkan data saya?',
+    a: 'Ya. Anda memiliki kendali penuh untuk mengekspor seluruh buku besar portofolio dalam format JSON atau CSV standar kapan saja, atau menghubungkannya ke sinkronisasi Cloud aman.',
+  },
+];
+
+/* ==========================================================================
+   MAIN LANDING PAGE COMPONENT (PORTFOLIO LEDGER WITH ONWARD SUMMIT THEME)
+   ========================================================================== */
 
 export default function LandingPage() {
   const { lang, toggleLanguage } = useLanguage();
   const { user, openAuthModal } = useAuth();
   const { guestAssetCount } = usePortfolio();
 
-  const [consoleCurrency, setConsoleCurrency] = useState<'IDR' | 'USD'>('IDR');
+  const uid = useId().replace(/:/g, '');
+  const rootRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
+  const ticketRef = useRef<HTMLDivElement>(null);
+
+  // States
+  const [navSolid, setNavSolid] = useState<boolean>(false);
+  const [currency, setCurrency] = useState<'IDR' | 'USD'>('IDR');
   const [marketFilter, setMarketFilter] = useState<'ALL' | 'IDX' | 'CRYPTO'>('ALL');
   const [extraBbcaLots, setExtraBbcaLots] = useState<number>(0);
-  const [selectedRoleIndex, setSelectedRoleIndex] = useState<number>(0);
+  const [openRowIndex, setOpenRowIndex] = useState<number>(0);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number>(0);
+  const [activeProfileIndex, setActiveProfileIndex] = useState<number>(0);
+  const [autoAdvance, setAutoAdvance] = useState<boolean>(true);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
   const [copiedPass, setCopiedPass] = useState<boolean>(false);
+
+  // Countdown timer for next IDX market opening
+  const [countdown, setCountdown] = useState<{ hours: number; minutes: number; seconds: number }>({
+    hours: 14,
+    minutes: 30,
+    seconds: 0,
+  });
 
   const isID = lang === 'id';
   const fxRate = 16400;
 
-  const formatMoney = (idrAmount: number, compact = false) => {
-    if (consoleCurrency === 'USD') {
+  // Sticky nav solid trigger
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (heroRef.current) {
+            const rect = heroRef.current.getBoundingClientRect();
+            setNavSolid(rect.bottom < 72);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Auto-advance profiles every 7 seconds
+  useEffect(() => {
+    if (!autoAdvance || isPaused) return;
+    const timer = setTimeout(() => {
+      setActiveProfileIndex((prev) => (prev + 1) % INVESTOR_PROFILES.length);
+    }, 7000);
+    return () => clearTimeout(timer);
+  }, [activeProfileIndex, autoAdvance, isPaused]);
+
+  // Dynamic countdown timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        let { hours, minutes, seconds } = prev;
+        if (seconds > 0) {
+          seconds--;
+        } else if (minutes > 0) {
+          minutes--;
+          seconds = 59;
+        } else if (hours > 0) {
+          hours--;
+          minutes = 59;
+          seconds = 59;
+        } else {
+          hours = 23;
+          minutes = 59;
+          seconds = 59;
+        }
+        return { hours, minutes, seconds };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Formatter
+  const formatMoney = (idrAmount: number) => {
+    if (currency === 'USD') {
       const usd = idrAmount / fxRate;
       return `$${usd.toLocaleString('en-US', {
-        minimumFractionDigits: compact && usd >= 1000 ? 0 : 2,
-        maximumFractionDigits: compact && usd >= 1000 ? 0 : 2,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
       })}`;
     }
     return `Rp ${Math.round(idrAmount).toLocaleString('id-ID')}`;
   };
 
-  // Compute live ledger positions including interactive lot simulation
+  // Compute live ledger with simulation
   const computedLedger = useMemo(() => {
-    const rows = BASE_LEDGER_ROWS.map((row) => {
+    const rows = BASE_LEDGER.map((row) => {
       if (row.ticker === 'BBCA' && extraBbcaLots > 0) {
         const addedShares = extraBbcaLots * 100;
         const simBuyPrice = 9750;
@@ -129,14 +996,13 @@ export default function LandingPage() {
       };
     });
 
-    const portfolioValueIdr = enriched.reduce((acc, r) => acc + r.marketValueIdr, 0);
-    const portfolioCostIdr = enriched.reduce((acc, r) => acc + r.costBasisIdr, 0);
-    const portfolioPlIdr = portfolioValueIdr - portfolioCostIdr;
-    const portfolioPlPct =
-      portfolioCostIdr > 0 ? (portfolioPlIdr / portfolioCostIdr) * 100 : 0;
+    const totalValueIdr = enriched.reduce((acc, r) => acc + r.marketValueIdr, 0);
+    const totalCostIdr = enriched.reduce((acc, r) => acc + r.costBasisIdr, 0);
+    const totalPlIdr = totalValueIdr - totalCostIdr;
+    const totalPlPct = totalCostIdr > 0 ? (totalPlIdr / totalCostIdr) * 100 : 0;
 
     const withWeights = enriched.map((r) => {
-      const weight = portfolioValueIdr > 0 ? r.marketValueIdr / portfolioValueIdr : 0;
+      const weight = totalValueIdr > 0 ? r.marketValueIdr / totalValueIdr : 0;
       return {
         ...r,
         weight,
@@ -144,1164 +1010,659 @@ export default function LandingPage() {
       };
     });
 
-    // Herfindahl-Hirschman Index: sum of squared portfolio weights
+    // Herfindahl-Hirschman Index
     const hhiDecimal = withWeights.reduce((acc, r) => acc + r.weight * r.weight, 0);
     const hhiPoints = Math.round(hhiDecimal * 10000);
-    const hhiScore100 = Math.round(hhiDecimal * 100);
 
     const idxValue = withWeights
-      .filter((r) => r.market === 'IDX')
+      .filter((r) => r.market !== 'CRYPTO')
       .reduce((acc, r) => acc + r.marketValueIdr, 0);
     const cryptoValue = withWeights
       .filter((r) => r.market === 'CRYPTO')
       .reduce((acc, r) => acc + r.marketValueIdr, 0);
-
-    const idxSharePct = portfolioValueIdr > 0 ? (idxValue / portfolioValueIdr) * 100 : 0;
-    const cryptoSharePct =
-      portfolioValueIdr > 0 ? (cryptoValue / portfolioValueIdr) * 100 : 0;
-
-    const visibleRows =
-      marketFilter === 'ALL'
-        ? withWeights
-        : withWeights.filter((r) => r.market === marketFilter);
+    const idxPct = totalValueIdr > 0 ? (idxValue / totalValueIdr) * 100 : 0;
+    const cryptoPct = totalValueIdr > 0 ? (cryptoValue / totalValueIdr) * 100 : 0;
 
     return {
-      rows: visibleRows,
-      allRowsCount: withWeights.length,
-      portfolioValueIdr,
-      portfolioCostIdr,
-      portfolioPlIdr,
-      portfolioPlPct,
-      hhiDecimal,
+      rows: withWeights,
+      totalValueIdr,
+      totalCostIdr,
+      totalPlIdr,
+      totalPlPct,
       hhiPoints,
-      hhiScore100,
-      idxSharePct,
-      cryptoSharePct,
+      idxPct,
+      cryptoPct,
     };
-  }, [extraBbcaLots, marketFilter]);
+  }, [extraBbcaLots]);
 
-  // Investor roles for Role Selector Tabs
-  const investorRoles = useMemo(
-    () => [
-      {
-        id: 'idx-stocks',
-        title: isID ? 'Investor Saham IDX' : 'IDX Equity Investor',
-        tag: isID ? 'Standar BEI: 1 Lot = 100 Lembar' : 'IDX Standard: 1 Lot = 100 Shares',
-        pitch: isID
-          ? 'Mencatat akumulasi saham Bursa Efek Indonesia dalam standar kelipatan 100 lembar per lot. Hitung modal rata-rata tertimbang (average down atau up) secara akurat tanpa spreadsheet yang rentan rusak.'
-          : 'Track Indonesian stock accumulation in standard 100-share Lots. Calculate weighted-average cost basis seamlessly without brittle spreadsheets.',
-        specs: [
-          isID ? 'Unit Standar: 1 Lot (100 Lembar)' : 'Standard Unit: 1 Lot (100 Shares)',
-          isID ? 'Feed Harga: Yahoo Finance (.JK)' : 'Price Feed: Yahoo Finance (.JK)',
-          isID ? 'Pencatatan Dividen & Realized P/L' : 'Dividends & Realized P/L Logging',
-        ],
-      },
-      {
-        id: 'crypto-hodler',
-        title: isID ? 'Crypto HODLer' : 'Crypto HODLer',
-        tag: isID ? 'Unit Desimal: Hingga 8 Digit' : 'Fractional Units: Up to 8 Decimals',
-        pitch: isID
-          ? 'Presisi tinggi hingga 8 digit desimal untuk Bitcoin, Ethereum, dan altcoin. Pantau valuasi gabungan dalam Rupiah (IDR) dan USD secara simultan dengan konversi kurs real-time.'
-          : 'High precision up to 8 fractional decimals for Bitcoin, Ethereum, and altcoins. Monitor unified valuations in IDR and USD simultaneously with real-time FX conversion.',
-        specs: [
-          isID ? 'Presisi: 8 Digit Desimal Koin' : 'Precision: 8 Fractional Decimals',
-          isID ? 'Feed Pasar: CoinGecko API' : 'Market Feed: CoinGecko API',
-          isID ? 'Konversi Otomatis IDR & USD' : 'Automated IDR & USD Conversion',
-        ],
-      },
-      {
-        id: 'mutual-funds-cash',
-        title: isID ? 'Reksa Dana & Cash' : 'Mutual Funds & Cash',
-        tag: isID ? 'Likuiditas: Pasar Uang & Kas' : 'Liquidity: Money Market & Cash',
-        pitch: isID
-          ? 'Kelola alokasi instrumen pasar uang, surat berharga negara, dan cadangan kas likuid untuk memastikan daya beli (dry powder) tetap terukur seimbang di samping portofolio aset berisiko.'
-          : 'Manage money market allocations, sovereign debt, and liquidity reserves to ensure dry powder remains accurately balanced alongside volatile holdings.',
-        specs: [
-          isID ? 'Alokasi Cadangan Likuiditas' : 'Liquidity Buffer Allocation',
-          isID ? 'Monitoring Kas & Penyeimbang' : 'Cash & Balancing Reserve Tracker',
-          isID ? 'Pelindung Drawdown Portofolio' : 'Portfolio Drawdown Guard',
-        ],
-      },
-      {
-        id: 'fire-seeker',
-        title: isID ? 'FIRE Seeker' : 'FIRE Seeker',
-        tag: isID ? 'Metodologi: Indeks HHI Objektif' : 'Methodology: Objective HHI Index',
-        pitch: isID
-          ? 'Kuantifikasi kesehatan diversifikasi portofolio jangka panjang menggunakan Herfindahl-Hirschman Index (HHI). Cegah ketergantungan modal berlebih pada satu emiten atau koin secara objektif.'
-          : 'Measure long-term diversification health with the objective Herfindahl-Hirschman Index (HHI). Eliminate single-asset over-concentration before it threatens capital preservation.',
-        specs: [
-          isID ? 'Formula Matematis HHI = Σ (wᵢ)²' : 'Mathematical Formula HHI = Σ (wᵢ)²',
-          isID ? 'Ambang Batas Diversifikasi 0,250' : 'Diversification Threshold 0.250',
-          isID ? 'Prinsip Non-Advisory Murni (DYOR)' : 'Pure Non-Advisory Principle (DYOR)',
-        ],
-      },
-    ],
-    [isID]
-  );
+  // Filtered rows for display
+  const filteredRows = useMemo(() => {
+    return computedLedger.rows.filter((r) => {
+      if (marketFilter === 'ALL') return true;
+      return r.market === marketFilter;
+    });
+  }, [computedLedger.rows, marketFilter]);
 
-  const activeRole = investorRoles[selectedRoleIndex] || investorRoles[0];
+  const activeProfile = INVESTOR_PROFILES[activeProfileIndex];
+  const profileWords = useMemo(() => activeProfile.pitch.split(/\s+/), [activeProfile]);
 
-  const handleCopyPassCode = () => {
+  const handleCopyPass = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText('PASS-PTFN-2026-X79K');
+      navigator.clipboard.writeText('PTF-8842');
       setCopiedPass(true);
       setTimeout(() => setCopiedPass(false), 2000);
     }
   };
 
   return (
-    <div className="landing-page" id="landing-page">
-      {/* 1. Floating Frosted Navbar */}
-      <header className="landing-navbar" id="landing-navbar">
-        <div className="landing-navbar-inner">
-          <div className="landing-brand-group">
-            <Link href="/" className="landing-brand">
-              <div className="landing-brand-logo">
-                <img
-                  src="/logo.png"
-                  alt="Portofin"
-                  width={24}
-                  height={24}
-                  style={{ borderRadius: 6 }}
-                />
-              </div>
-              <span className="landing-brand-name">Portofin</span>
-            </Link>
-            <span className="landing-brand-divider" aria-hidden="true" />
-            <div className="landing-telemetry-pill">
-              <span className="landing-live-dot" />
-              <span>
-                {isID
-                  ? 'v2.4 Telemetri Aktif · BEI & Kripto'
-                  : 'v2.4 Live Telemetry · IDX & Crypto'}
-              </span>
-            </div>
+    <div ref={rootRef} className="ows-root">
+      {/* Floating Top Navigation */}
+      <header className="ows-nav" data-solid={navSolid ? '' : undefined}>
+        <Link
+          href="/"
+          className="ows-brand"
+          onClick={(e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <span className="ows-brand-word">Portofin</span>
+          <BrandArrowGlyph />
+        </Link>
+
+        <div className="ows-nav-center">
+          <div className="ows-when">
+            <span>BEI & Kripto</span>
+            <span className="ows-when-bar" aria-hidden="true" />
+            <span>Presisi Multi-Aset</span>
+            <span className="ows-when-cal">
+              <SmallArrow size={11} />
+            </span>
           </div>
+          <button
+            type="button"
+            className="ows-chip"
+            onClick={toggleLanguage}
+            title="Ganti Bahasa (ID / EN)"
+            style={{ height: '30px', padding: '0 10px', fontSize: '11px', fontWeight: 600 }}
+          >
+            {isID ? 'ID' : 'EN'}
+          </button>
+        </div>
 
-          <nav className="landing-nav-links" aria-label="Landing Navigation">
-            <a href="#konsol" className="landing-nav-link">
-              {isID ? 'Konsol Buku Besar' : 'Ledger Console'}
-            </a>
-            <a href="#profil-investor" className="landing-nav-link">
-              {isID ? 'Profil Investor' : 'Investor Roles'}
-            </a>
-            <a href="#arsitektur-fitur" className="landing-nav-link">
-              {isID ? 'Arsitektur Fitur' : 'Platform Architecture'}
-            </a>
-            <a href="#spesifikasi" className="landing-nav-link">
-              {isID ? 'Spesifikasi Pasar' : 'Specifications'}
-            </a>
-            <a href="#tiket-akses" className="landing-nav-link">
-              {isID ? 'Pas Investor' : 'Investor Pass'}
-            </a>
-          </nav>
-
-          <div className="landing-nav-actions">
+        <div className="ows-nav-actions">
+          {user ? (
+            <Link href="/dashboard" className="ows-btn ows-btn--dark ows-btn--nav">
+              <span>Portofolio</span>
+            </Link>
+          ) : (
             <button
               type="button"
-              onClick={toggleLanguage}
-              className="currency-toggle-btn small"
-              id="landing-lang-toggle"
-              title={isID ? 'Ganti Bahasa' : 'Switch Language'}
+              className="ows-btn ows-btn--dark ows-btn--nav"
+              onClick={() => openAuthModal('signin')}
             >
-              <span className={`currency-option ${lang === 'id' ? 'active' : ''}`}>ID</span>
-              <span className={`currency-option ${lang === 'en' ? 'active' : ''}`}>EN</span>
+              <span>Masuk</span>
             </button>
-
-            {!user && (
-              <button
-                type="button"
-                onClick={() => openAuthModal()}
-                className="btn-secondary landing-nav-cloud-btn"
-                id="landing-signin-btn"
-              >
-                <CloudUpload size={15} />
-                <span>{isID ? 'Masuk / Simpan ke Cloud' : 'Sign In / Cloud Backup'}</span>
-              </button>
-            )}
-
-            <Link
-              href="/dashboard"
-              className="btn-primary landing-nav-primary-btn"
-              id="landing-nav-dashboard"
-            >
-              <span>
-                {user
-                  ? isID
-                    ? 'Buka Dasbor'
-                    : 'Open Dashboard'
-                  : isID
-                    ? 'Coba Sandbox'
-                    : 'Start Sandbox'}
-              </span>
-            </Link>
-          </div>
+          )}
+          <Link href="/dashboard" className="ows-btn ows-btn--accent ows-btn--nav">
+            <span>Coba Sandbox</span>
+            <span className="ows-btn-arrow">
+              <SmallArrow size={10} />
+            </span>
+          </Link>
         </div>
       </header>
 
-      <main className="landing-main">
-        {/* 2. Grand Editorial Hero & Interactive Ledger Console */}
-        <section className="landing-hero" id="konsol">
-          <div className="landing-container">
-            {/* Local Session Detection Banner when guestAssetCount > 0 */}
-            {guestAssetCount > 0 && !user && (
-              <div className="landing-detected-banner" role="status">
-                <div className="landing-detected-info">
-                  <Database size={18} className="landing-detected-icon" />
-                  <div>
-                    <strong className="landing-detected-title">
-                      {isID
-                        ? `Terdeteksi ${guestAssetCount} aset tersimpan di perangkat ini.`
-                        : `Detected ${guestAssetCount} assets stored on this device.`}
-                    </strong>{' '}
-                    <span className="landing-detected-sub">
-                      {isID
-                        ? 'Buka dasbor untuk melanjutkan pencatatan atau masuk untuk mencadangkan ke cloud.'
-                        : 'Open the dashboard to continue or sign in to back up your local ledger to the cloud.'}
-                    </span>
-                  </div>
-                </div>
-                <div className="landing-detected-actions">
-                  <Link href="/dashboard" className="btn-primary landing-detected-btn">
-                    {isID
-                      ? `Buka Dasbor (${guestAssetCount} Aset)`
-                      : `Open Dashboard (${guestAssetCount})`}
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => openAuthModal()}
-                    className="btn-secondary landing-detected-cloud-btn"
-                  >
-                    <CloudUpload size={15} />
-                    <span>{isID ? 'Cadangkan ke Cloud' : 'Back Up to Cloud'}</span>
-                  </button>
-                </div>
-              </div>
-            )}
+      {/* Immersive Hero Section */}
+      <section ref={heroRef} className="ows-hero" aria-label="Portofin Portfolio Ledger">
+        <div className="ows-hero-bg" aria-hidden="true" />
+        <InteractiveCanvasField
+          mode="hero"
+          glyph="arrow"
+          lightColor="#dbe6ff"
+          darkColor="#3a6be0"
+          cell={14}
+        />
 
-            {/* Editorial Hero Header */}
-            <div className="landing-hero-header">
-              <div className="landing-hero-eyebrow">
-                <span className="landing-eyebrow-dot" />
-                <span>
-                  {isID
-                    ? 'BUKU BESAR KEUANGAN PRESISI · PASAR SAHAM BEI & KRIPTO'
-                    : 'PRECISION FINANCIAL LEDGER · IDX EQUITIES & FRACTIONAL CRYPTO'}
-                </span>
-              </div>
+        <div className="ows-hero-copy">
+          <h1 className="ows-title" aria-label="PORTOFIN">
+            {Array.from('PORTOFIN').map((char, idx) => (
+              <span
+                key={idx}
+                className="ows-title-ch"
+                style={{ '--i': idx } as React.CSSProperties}
+                aria-hidden="true"
+              >
+                {char}
+              </span>
+            ))}
+          </h1>
 
-              <h1 className="landing-hero-title">
-                {isID
-                  ? 'Satu Buku Besar Terpadu untuk Saham BEI dan Aset Kripto'
-                  : 'One Unified Accounting Ledger for IDX Equities & Crypto'}
-              </h1>
+          <p className="ows-tagline">
+            <span className="ows-tag-line" style={{ '--i': 0 } as React.CSSProperties}>
+              Buku Besar Keuangan Presisi Multi-Aset: Saham BEI & Kripto
+            </span>
+            <span className="ows-tag-line" style={{ '--i': 1 } as React.CSSProperties}>
+              Kustodi Lokal Peramban. Privasi Mandiri Nir-Pelacak.
+            </span>
+          </p>
 
-              <p className="landing-hero-subtitle">
-                {isID
-                  ? 'Precision Financial Ledger for Indonesian Investors & Modern Portfolio Tracking. Satukan pencatatan lot saham Bursa Efek Indonesia dan desimal kripto dengan kalkulasi modal rata-rata tertimbang, pemantauan kurs IDR dan USD live, serta diagnostik konsentrasi risiko matematis HHI.'
-                  : 'Precision Financial Ledger for Indonesian Investors & Modern Portfolio Tracking. Unify Indonesian stock lot accounting and fractional crypto holdings with weighted-average cost basis, real-time IDR and USD feeds, and mathematical HHI risk analytics.'}
-              </p>
-
-              <div className="landing-hero-actions">
-                <Link
-                  href="/dashboard"
-                  className="btn-primary landing-hero-btn-primary"
-                  id="hero-cta-sandbox"
-                >
-                  <span>
-                    {isID ? 'Coba Sandbox Mode Tamu' : 'Start in Guest Sandbox'}
-                  </span>
-                  <ArrowRight size={17} />
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={() => openAuthModal()}
-                  className="btn-secondary landing-hero-btn-cloud"
-                  id="hero-cta-auth"
-                >
-                  <CloudUpload size={17} />
-                  <span>
-                    {isID ? 'Masuk / Simpan ke Cloud' : 'Sign In / Save to Cloud'}
-                  </span>
-                </button>
-              </div>
-
-              <div className="landing-hero-trust-strip" role="list">
-                <div className="landing-trust-item" role="listitem">
-                  <CheckCircle2 size={15} className="landing-trust-icon" />
-                  <span>{isID ? 'Tanpa Registrasi Awal' : 'No Upfront Registration'}</span>
-                </div>
-                <div className="landing-trust-item" role="listitem">
-                  <HardDrive size={15} className="landing-trust-icon" />
-                  <span>
-                    {isID
-                      ? 'Penyimpanan Lokal di Browser'
-                      : 'Stored in Your Browser (Local-First)'}
-                  </span>
-                </div>
-                <div className="landing-trust-item" role="listitem">
-                  <ShieldCheck size={15} className="landing-trust-icon" />
-                  <span>{isID ? '100% Bebas Iklan & Pelacak' : '100% Ad & Tracker Free'}</span>
-                </div>
-                <div className="landing-trust-item" role="listitem">
-                  <Scale size={15} className="landing-trust-icon" />
-                  <span>{isID ? 'Kalkulasi Risiko HHI Objektif' : 'Objective HHI Math'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Interactive Ledger Console */}
-            <div
-              className="landing-console"
-              role="region"
-              aria-label={
-                isID
-                  ? 'Konsol Interaktif Buku Besar Portofolio'
-                  : 'Interactive Portfolio Ledger Console'
-              }
+          <div className="ows-hero-actions">
+            <Link href="/dashboard" className="ows-btn ows-btn--accent">
+              <span>Buka Sandbox Tamu</span>
+              <SmallArrow size={12} />
+            </Link>
+            <button
+              type="button"
+              className="ows-btn ows-btn--ghost-white"
+              onClick={() => openAuthModal(user ? 'signin' : 'signup')}
             >
-              {/* Console Control Bar */}
-              <div className="landing-console-toolbar">
-                <div className="landing-console-toolbar-left">
-                  <div className="landing-console-dots" aria-hidden="true">
-                    <span className="landing-console-dot close" />
-                    <span className="landing-console-dot minimize" />
-                    <span className="landing-console-dot maximize" />
-                  </div>
-                  <div className="landing-console-badge">
-                    <span className="landing-live-dot" />
-                    <span className="landing-console-label">
-                      {isID ? 'KONSOL BUKU BESAR INTERAKTIF' : 'INTERACTIVE LEDGER WORKSPACE'}
-                    </span>
-                  </div>
-                  <div className="landing-console-tabs" role="tablist">
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={marketFilter === 'ALL'}
-                      className={`landing-console-tab ${marketFilter === 'ALL' ? 'active' : ''}`}
-                      onClick={() => setMarketFilter('ALL')}
-                    >
-                      {isID ? 'Semua Instrumen (4)' : 'All Instruments (4)'}
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={marketFilter === 'IDX'}
-                      className={`landing-console-tab ${marketFilter === 'IDX' ? 'active' : ''}`}
-                      onClick={() => setMarketFilter('IDX')}
-                    >
-                      {isID ? 'Saham BEI (2)' : 'IDX Equities (2)'}
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={marketFilter === 'CRYPTO'}
-                      className={`landing-console-tab ${marketFilter === 'CRYPTO' ? 'active' : ''}`}
-                      onClick={() => setMarketFilter('CRYPTO')}
-                    >
-                      {isID ? 'Aset Kripto (2)' : 'Crypto Assets (2)'}
-                    </button>
-                  </div>
-                </div>
+              <span>{user ? 'Kelola Akun Cloud' : 'Masuk Akun Cloud'}</span>
+            </button>
+          </div>
 
-                <div className="landing-console-toolbar-right">
-                  {extraBbcaLots === 0 ? (
-                    <button
-                      type="button"
-                      className="btn-secondary landing-sim-btn"
-                      onClick={() => setExtraBbcaLots(20)}
-                    >
-                      <Plus size={14} />
-                      <span>
-                        {isID
-                          ? 'Simulasi Beli +20 Lot BBCA'
-                          : 'Simulate Buy +20 Lots BBCA'}
-                      </span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn-secondary landing-sim-btn active"
-                      onClick={() => setExtraBbcaLots(0)}
-                    >
-                      <RotateCcw size={14} />
-                      <span>
-                        {isID ? 'Reset Simulasi (+20 Lot BBCA)' : 'Reset Simulation (+20 Lots)'}
-                      </span>
-                    </button>
-                  )}
-
-                  <div className="landing-currency-switch" role="group" aria-label="Currency">
-                    <button
-                      type="button"
-                      className={`landing-cur-opt ${consoleCurrency === 'IDR' ? 'active' : ''}`}
-                      onClick={() => setConsoleCurrency('IDR')}
-                    >
-                      IDR
-                    </button>
-                    <button
-                      type="button"
-                      className={`landing-cur-opt ${consoleCurrency === 'USD' ? 'active' : ''}`}
-                      onClick={() => setConsoleCurrency('USD')}
-                    >
-                      USD
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Console Summary Strip (4 Accounting Metrics) */}
-              <div className="landing-console-metrics">
-                <div className="landing-console-metric">
-                  <span className="landing-metric-label">
-                    {isID ? 'NILAI BERSIH PORTOFOLIO' : 'NET PORTFOLIO VALUE'}
-                  </span>
-                  <span className="landing-metric-value">
-                    {formatMoney(computedLedger.portfolioValueIdr)}
-                  </span>
-                  <span className="landing-metric-sub">
-                    {isID
-                      ? `Kurs acuan: Rp ${fxRate.toLocaleString('id-ID')} / USD`
-                      : `Reference FX: IDR ${fxRate.toLocaleString('en-US')} / USD`}
-                  </span>
-                </div>
-
-                <div className="landing-console-metric">
-                  <span className="landing-metric-label">
-                    {isID ? 'MODAL DIINVESTASIKAN (COST BASIS)' : 'INVESTED CAPITAL (COST BASIS)'}
-                  </span>
-                  <span className="landing-metric-value">
-                    {formatMoney(computedLedger.portfolioCostIdr)}
-                  </span>
-                  <span className="landing-metric-sub">
-                    {extraBbcaLots > 0
-                      ? isID
-                        ? 'Termasuk tambahan +20 Lot BBCA @ Rp 9.750'
-                        : 'Includes +20 Lots BBCA @ IDR 9,750'
-                      : isID
-                        ? 'Akumulasi rata-rata harga beli tertimbang'
-                        : 'Weighted-average purchase cost basis'}
-                  </span>
-                </div>
-
-                <div className="landing-console-metric">
-                  <span className="landing-metric-label">
-                    {isID ? 'SELISIH BELUM TEREALISASI (P/L)' : 'UNREALIZED PROFIT / LOSS'}
-                  </span>
-                  <span className="landing-metric-value positive">
-                    +{formatMoney(computedLedger.portfolioPlIdr)}
-                  </span>
-                  <span className="landing-metric-badge positive">
-                    +{computedLedger.portfolioPlPct.toFixed(2)}%
-                  </span>
-                </div>
-
-                <div className="landing-console-metric">
-                  <span className="landing-metric-label">
-                    {isID ? 'INDEKS KONSENTRASI HHI' : 'HHI CONCENTRATION INDEX'}
-                  </span>
-                  <span className="landing-metric-value">
-                    {computedLedger.hhiPoints.toLocaleString('id-ID')}{' '}
-                    <small className="landing-metric-unit">/ 10.000</small>
-                  </span>
-                  <span className="landing-metric-sub">
-                    {computedLedger.hhiPoints < 3000
-                      ? isID
-                        ? 'Distribusi terdiversifikasi (< 3.000)'
-                        : 'Diversified weight distribution (< 3,000)'
-                      : isID
-                        ? 'Konsentrasi moderat pada BBCA'
-                        : 'Moderate concentration in BBCA'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Console Main Workspace: Ledger Table + HHI Diagnostic Panel */}
-              <div className="landing-console-body">
-                <div className="landing-console-table-pane">
-                  {/* Desktop / Tablet Accounting Table */}
-                  <div className="landing-ledger-table-wrap">
-                    <table className="landing-ledger-table">
-                      <thead>
-                        <tr>
-                          <th>{isID ? 'INSTRUMEN' : 'INSTRUMENT'}</th>
-                          <th className="text-right">
-                            {isID ? 'KUANTITAS (LOT / UNIT)' : 'QUANTITY (LOTS / UNITS)'}
-                          </th>
-                          <th className="text-right">
-                            {isID ? 'RATA-RATA BELI' : 'AVG BUY PRICE'}
-                          </th>
-                          <th className="text-right">
-                            {isID ? 'HARGA PASAR' : 'MARKET PRICE'}
-                          </th>
-                          <th className="text-right">
-                            {isID ? 'NILAI PASAR & BOBOT' : 'MARKET VALUE & WEIGHT'}
-                          </th>
-                          <th className="text-right">
-                            {isID ? 'LABA / RUGI' : 'UNREALIZED P/L'}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {computedLedger.rows.map((row) => (
-                          <tr key={row.ticker}>
-                            <td>
-                              <div className="landing-cell-instrument">
-                                <span
-                                  className={`landing-market-tag ${
-                                    row.market === 'IDX' ? 'idx' : 'crypto'
-                                  }`}
-                                >
-                                  {row.market}
-                                </span>
-                                <div>
-                                  <div className="landing-cell-ticker">{row.ticker}</div>
-                                  <div className="landing-cell-name">{row.name}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="text-right tabular">
-                              {row.market === 'IDX' ? (
-                                <div className="landing-cell-stack">
-                                  <span className="landing-cell-primary">
-                                    {row.lots} Lot
-                                  </span>
-                                  <span className="landing-cell-secondary">
-                                    {row.sharesOrUnits.toLocaleString('id-ID')}{' '}
-                                    {isID ? 'lembar' : 'shares'}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="landing-cell-stack">
-                                  <span className="landing-cell-primary">
-                                    {row.sharesOrUnits.toFixed(4)} {row.ticker}
-                                  </span>
-                                  <span className="landing-cell-secondary">
-                                    {isID ? 'Unit desimal' : 'Fractional unit'}
-                                  </span>
-                                </div>
-                              )}
-                            </td>
-                            <td className="text-right tabular">
-                              <span className="landing-cell-primary">
-                                {formatMoney(row.avgBuyIdr)}
-                              </span>
-                            </td>
-                            <td className="text-right tabular">
-                              <span className="landing-cell-primary">
-                                {formatMoney(row.marketPriceIdr)}
-                              </span>
-                            </td>
-                            <td className="text-right tabular">
-                              <div className="landing-cell-stack">
-                                <span className="landing-cell-primary">
-                                  {formatMoney(row.marketValueIdr)}
-                                </span>
-                                <span className="landing-cell-secondary">
-                                  {row.weightPct.toFixed(1)}%{' '}
-                                  {isID ? 'dari portofolio' : 'of portfolio'}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="text-right tabular">
-                              <div className="landing-cell-stack">
-                                <span className="landing-cell-pl positive">
-                                  +{formatMoney(row.plIdr)}
-                                </span>
-                                <span className="landing-cell-pl-pct positive">
-                                  +{row.plPct.toFixed(2)}%
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Mobile Reflow Cards (<= 768px) */}
-                  <div className="landing-ledger-mobile-cards">
-                    {computedLedger.rows.map((row) => (
-                      <div key={row.ticker} className="landing-mobile-pos-card">
-                        <div className="landing-mobile-pos-top">
-                          <div className="landing-cell-instrument">
-                            <span
-                              className={`landing-market-tag ${
-                                row.market === 'IDX' ? 'idx' : 'crypto'
-                              }`}
-                            >
-                              {row.market}
-                            </span>
-                            <div>
-                              <div className="landing-cell-ticker">{row.ticker}</div>
-                              <div className="landing-cell-name">{row.name}</div>
-                            </div>
-                          </div>
-                          <div className="text-right tabular">
-                            <div className="landing-cell-primary">
-                              {formatMoney(row.marketValueIdr)}
-                            </div>
-                            <div className="landing-cell-pl-pct positive">
-                              +{row.plPct.toFixed(2)}%
-                            </div>
-                          </div>
-                        </div>
-                        <div className="landing-mobile-pos-grid tabular">
-                          <div>
-                            <span className="landing-mobile-pos-label">
-                              {isID ? 'Kuantitas' : 'Quantity'}
-                            </span>
-                            <span className="landing-mobile-pos-val">
-                              {row.market === 'IDX'
-                                ? `${row.lots} Lot (${row.sharesOrUnits.toLocaleString('id-ID')} lbr)`
-                                : `${row.sharesOrUnits.toFixed(4)} ${row.ticker}`}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="landing-mobile-pos-label">
-                              {isID ? 'Rata-rata Beli' : 'Avg Buy'}
-                            </span>
-                            <span className="landing-mobile-pos-val">
-                              {formatMoney(row.avgBuyIdr, true)}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="landing-mobile-pos-label">
-                              {isID ? 'Bobot' : 'Weight'}
-                            </span>
-                            <span className="landing-mobile-pos-val">
-                              {row.weightPct.toFixed(1)}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* HHI Risk Concentration Side Panel */}
-                <aside className="landing-console-side-pane">
-                  <div className="landing-side-header">
-                    <span className="landing-side-title">
-                      {isID
-                        ? 'Kalkulator Konsentrasi HHI'
-                        : 'HHI Concentration Calculator'}
-                    </span>
-                    <span className="landing-side-tag">NON-ADVISORY</span>
-                  </div>
-
-                  <div className="landing-hhi-box">
-                    <div className="landing-hhi-gauge-row">
-                      <svg
-                        viewBox="0 0 120 68"
-                        className="landing-hhi-svg"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M 12 60 A 48 48 0 0 1 108 60"
-                          fill="none"
-                          stroke="var(--border)"
-                          strokeWidth="10"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M 12 60 A 48 48 0 0 1 108 60"
-                          fill="none"
-                          stroke="var(--accent)"
-                          strokeWidth="10"
-                          strokeLinecap="round"
-                          strokeDasharray={`${Math.min(
-                            150,
-                            Math.round((computedLedger.hhiScore100 / 100) * 150)
-                          )} 150`}
-                        />
-                      </svg>
-                      <div className="landing-hhi-numbers">
-                        <span className="landing-hhi-main tabular">
-                          HHI = {computedLedger.hhiDecimal.toFixed(3)}
-                        </span>
-                        <span className="landing-hhi-sub">
-                          {isID
-                            ? `Skor Rasio: ${computedLedger.hhiScore100} / 100`
-                            : `Ratio Score: ${computedLedger.hhiScore100} / 100`}
-                        </span>
-                        <span
-                          className={`landing-hhi-status-badge ${
-                            computedLedger.hhiPoints < 3000 ? 'diversified' : 'concentrated'
-                          }`}
-                        >
-                          <span className="landing-hhi-status-dot" />
-                          {computedLedger.hhiPoints < 3000
-                            ? isID
-                              ? 'TERDIVERSIFIKASI'
-                              : 'DIVERSIFIED'
-                            : isID
-                              ? 'KONSENTRASI TINGGI'
-                              : 'CONCENTRATED'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="landing-alloc-breakdown">
-                      <div className="landing-alloc-row tabular">
-                        <span>
-                          {isID ? 'Saham BEI' : 'IDX Equities'} (
-                          {computedLedger.idxSharePct.toFixed(1)}%)
-                        </span>
-                        <span>
-                          {isID ? 'Kripto' : 'Crypto'} (
-                          {computedLedger.cryptoSharePct.toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div className="landing-alloc-track">
-                        <div
-                          className="landing-alloc-fill idx"
-                          style={{ width: `${computedLedger.idxSharePct}%` }}
-                        />
-                        <div
-                          className="landing-alloc-fill crypto"
-                          style={{ width: `${computedLedger.cryptoSharePct}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <p className="landing-hhi-desc">
-                      {isID
-                        ? 'Rumus HHI menjumlahkan kuadrat bobot tiap aset. Nilai mendekati 0,250 pada 4 aset menunjukkan alokasi modal yang merata tanpa dominasi tunggal.'
-                        : 'The HHI formula sums the squared weights of each holding. A reading near 0.250 across 4 assets indicates balanced capital distribution without single-asset dominance.'}
-                    </p>
-                  </div>
-                </aside>
-              </div>
+          {guestAssetCount > 0 && (
+            <div className="ows-hero-resume">
+              <span className="ows-live-dot" />
+              <span>
+                Sesi Tamu Terdeteksi: <strong>{guestAssetCount} aset</strong> tersimpan aman di peramban ini.
+              </span>
+              <Link href="/dashboard" className="ows-link" style={{ color: '#FFFFFF', textDecoration: 'underline' }}>
+                Lanjutkan
+              </Link>
             </div>
+          )}
+        </div>
+      </section>
+
+      {/* Main Content Sections */}
+      <main className="ows-main">
+        {/* Section 1: Capabilities (On what to expect) */}
+        <section className="ows-sec ows-wrap" data-sec="expect">
+          <span className="ows-kicker">Kapabilitas Sistem</span>
+          <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
+            Rekayasa Buku Besar Berstandar Finansial
+          </h2>
+          <p className="ows-intro ows-rise">
+            Dibangun untuk investor dan pengelola modal yang menolak kompromi akurasi. Menyatukan dinamika pasar modal Indonesia dengan likuiditas aset terdesentralisasi global.
+          </p>
+
+          <div className="ows-features">
+            <article className="ows-feature ows-rise" style={{ '--d': '0ms' } as React.CSSProperties}>
+              <div className="ows-feature-mark">
+                <GeometricMark kind="arrow" uid={uid} index={0} />
+              </div>
+              <h3 className="ows-feature-title">Buku Besar Multi-Aset BEI & Kripto</h3>
+              <p className="ows-feature-text">
+                Saham Indonesia dicatat tepat dalam kelipatan 100 lembar per lot. Aset kripto dikalkulasi dalam presisi 8 desimal penuh tanpa distorsi pembulatan pecahan.
+              </p>
+            </article>
+
+            <article className="ows-feature ows-rise" style={{ '--d': '90ms' } as React.CSSProperties}>
+              <div className="ows-feature-mark">
+                <GeometricMark kind="ring" uid={uid} index={1} />
+              </div>
+              <h3 className="ows-feature-title">Kustodi Lokal Mandiri (Zero-Cloud)</h3>
+              <p className="ows-feature-text">
+                Portofolio tersimpan di basis data IndexedDB peramban lokal Anda. Tidak ada kewajiban registrasi, tidak ada analitik pihak ketiga, dan tanpa pelacakan data pribadi.
+              </p>
+            </article>
+
+            <article className="ows-feature ows-rise" style={{ '--d': '180ms' } as React.CSSProperties}>
+              <div className="ows-feature-mark">
+                <GeometricMark kind="plus" uid={uid} index={2} />
+              </div>
+              <h3 className="ows-feature-title">Telemetri Risiko Portofolio (HHI)</h3>
+              <p className="ows-feature-text">
+                Kalkulasi otomatis Indeks Herfindahl-Hirschman untuk mengukur konsentrasi modal secara matematis, dilengkapi simulasi pesanan beli dan jual seketika.
+              </p>
+            </article>
           </div>
         </section>
 
-        {/* 3. Role Selector Tabs (Onward Summit Style) */}
-        <section className="landing-roles-section" id="profil-investor">
-          <div className="landing-roles-container">
-            <div className="landing-section-intro">
-              <div className="landing-kicker">
-                <Compass size={15} />
-                <span>
-                  {isID
-                    ? 'PANDUAN PROFIL INVESTOR / 01'
-                    : 'INVESTOR PROFILE PLAYBOOK / 01'}
+        {/* Section 2: Investor Profiles (On the guest list) */}
+        <section
+          className="ows-sec ows-wrap"
+          data-sec="guests"
+          onPointerEnter={() => setIsPaused(true)}
+          onPointerLeave={() => setIsPaused(false)}
+          onFocus={() => setIsPaused(true)}
+          onBlur={() => setIsPaused(false)}
+        >
+          <span className="ows-kicker">Untuk Siapa Portofin Dirancang</span>
+          <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
+            Profil Pengelola Modal
+          </h2>
+
+          <div className="ows-chips ows-rise" role="tablist" aria-label="Profil Investor">
+            {INVESTOR_PROFILES.map((prof, idx) => (
+              <button
+                key={prof.role}
+                type="button"
+                role="tab"
+                aria-selected={idx === activeProfileIndex}
+                className="ows-chip"
+                data-auto={idx === activeProfileIndex && autoAdvance && !isPaused ? '' : undefined}
+                onClick={() => {
+                  setActiveProfileIndex(idx);
+                  setAutoAdvance(false);
+                }}
+              >
+                <span>{prof.role}</span>
+                <span
+                  key={`${idx}-${autoAdvance}`}
+                  className="ows-chip-bar"
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+
+          <p className="ows-pitch ows-rise" aria-live="polite">
+            <span key={activeProfileIndex} className="ows-pitch-in">
+              {profileWords.map((word, wIdx) => (
+                <span
+                  key={wIdx}
+                  className="ows-word"
+                  style={{ '--i': wIdx } as React.CSSProperties}
+                >
+                  {word}{' '}
                 </span>
-              </div>
-              <h2 className="landing-section-title">
-                {isID
-                  ? 'Dirancang untuk Setiap Strategi Penempatan Modal'
-                  : 'Engineered for Every Capital Allocation Strategy'}
+              ))}
+            </span>
+          </p>
+        </section>
+
+        {/* Section 3: Live Ledger Console & Telemetry (On the trading floor / Agenda) */}
+        <section className="ows-sec ows-wrap" data-sec="agenda">
+          <div className="ows-sec-head">
+            <div>
+              <span className="ows-kicker">Telemetri Langsung</span>
+              <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
+                Buku Besar Posisi & Simulasi Lot
               </h2>
-              <p className="landing-section-desc">
-                {isID
-                  ? 'Pilih profil Anda untuk melihat bagaimana mesin buku besar Portofin mengakomodasi konvensi pasar dan kalkulasi posisi Anda secara native.'
-                  : 'Select your profile to explore how Portofin natively handles your asset market conventions and position accounting.'}
+              <p className="ows-intro ows-rise">
+                Pantau komposisi portofolio real-time, evaluasi keuntungan yang belum direalisasikan, dan uji dampak transaksi tambahan langsung pada skor risiko HHI.
               </p>
             </div>
 
-            {/* Role selector chips */}
-            <div className="landing-chips" role="tablist" aria-label="Investor Profiles">
-              {investorRoles.map((role, idx) => {
-                const isSelected = selectedRoleIndex === idx;
+            <div className="ows-saved ows-rise" data-on={extraBbcaLots > 0 ? '' : undefined}>
+              <span>Status Simulasi:</span>
+              <strong className="ows-saved-n">
+                {extraBbcaLots > 0 ? `+${extraBbcaLots} Lot BBCA Aktif` : 'Posisi Riil'}
+              </strong>
+              <button
+                type="button"
+                className="ows-btn ows-btn--dark ows-btn--sm"
+                onClick={() => setExtraBbcaLots((prev) => (prev > 0 ? 0 : 20))}
+              >
+                {extraBbcaLots > 0 ? 'Reset Simulasi' : 'Uji +20 Lot BBCA'}
+              </button>
+            </div>
+          </div>
+
+          {/* Telemetry Metrics Strip */}
+          <div className="ows-telemetry-strip ows-rise">
+            <div className="ows-telemetry-col">
+              <span className="ows-telemetry-label">Total Nilai Buku</span>
+              <span className="ows-telemetry-val">{formatMoney(computedLedger.totalValueIdr)}</span>
+              <span className="ows-telemetry-sub">
+                Modal: {formatMoney(computedLedger.totalCostIdr)}
+              </span>
+            </div>
+
+            <div className="ows-telemetry-col">
+              <span className="ows-telemetry-label">Keuntungan Belum Realisasi</span>
+              <span className="ows-telemetry-val" style={{ color: computedLedger.totalPlIdr >= 0 ? '#34D399' : '#F87171' }}>
+                {computedLedger.totalPlIdr >= 0 ? '+' : ''}
+                {formatMoney(computedLedger.totalPlIdr)}
+              </span>
+              <span className="ows-telemetry-sub">
+                {computedLedger.totalPlPct >= 0 ? '+' : ''}
+                {computedLedger.totalPlPct.toFixed(2)}% dari modal
+              </span>
+            </div>
+
+            <div className="ows-telemetry-col">
+              <span className="ows-telemetry-label">Konsentrasi Risiko (HHI)</span>
+              <span className="ows-telemetry-val">{computedLedger.hhiPoints.toLocaleString()}</span>
+              <span className="ows-telemetry-sub">
+                {computedLedger.hhiPoints < 2500 ? 'Konsentrasi Sehat' : 'Konsentrasi Moderat'}
+              </span>
+            </div>
+
+            <div className="ows-telemetry-col">
+              <span className="ows-telemetry-label">Alokasi Saham vs Kripto</span>
+              <span className="ows-telemetry-val">
+                {computedLedger.idxPct.toFixed(0)}% / {computedLedger.cryptoPct.toFixed(0)}%
+              </span>
+              <span className="ows-telemetry-sub">
+                BEI: {formatMoney(computedLedger.totalValueIdr * (computedLedger.idxPct / 100))}
+              </span>
+            </div>
+          </div>
+
+          {/* Filter Chips & Currency Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginTop: '24px' }}>
+            <div className="ows-chips ows-chips--filter" role="group" aria-label="Filter Pasar" style={{ margin: 0 }}>
+              {(['ALL', 'IDX', 'CRYPTO'] as const).map((filter) => {
+                const count = computedLedger.rows.filter((r) => filter === 'ALL' || r.market === filter).length;
                 return (
                   <button
-                    key={role.id}
+                    key={filter}
                     type="button"
-                    role="tab"
-                    id={`role-tab-${idx}`}
-                    aria-selected={isSelected}
-                    aria-controls={`role-panel-${idx}`}
-                    tabIndex={isSelected ? 0 : -1}
-                    className={`landing-chip ${isSelected ? 'active' : ''}`}
-                    onClick={() => setSelectedRoleIndex(idx)}
+                    className="ows-chip"
+                    aria-pressed={marketFilter === filter}
+                    onClick={() => setMarketFilter(filter)}
                   >
-                    <span>{role.title}</span>
-                    {isSelected && <span className="landing-chip-bar" aria-hidden="true" />}
+                    <span>{filter === 'ALL' ? 'Semua Pasar' : filter === 'IDX' ? 'Saham BEI' : 'Kripto'}</span>
+                    <span className="ows-chip-n">{count}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Active Pitch Card */}
-            <div
-              className="landing-pitch-card"
-              role="tabpanel"
-              id={`role-panel-${selectedRoleIndex}`}
-              aria-labelledby={`role-tab-${selectedRoleIndex}`}
-            >
-              <div className="landing-pitch-header">
-                <div className="landing-pitch-role-badge">
-                  <span>{activeRole.title}</span>
-                </div>
-                <span className="landing-pitch-tag">{activeRole.tag}</span>
-              </div>
+            <div style={{ display: 'inline-flex', gap: '4px', background: 'var(--ows-tint)', padding: '3px', borderRadius: '6px' }}>
+              {(['IDR', 'USD'] as const).map((cur) => (
+                <button
+                  key={cur}
+                  type="button"
+                  className="ows-chip"
+                  aria-pressed={currency === cur}
+                  onClick={() => setCurrency(cur)}
+                  style={{ height: '26px', padding: '0 10px', fontSize: '11px', fontWeight: 600 }}
+                >
+                  {cur}
+                </button>
+              ))}
+            </div>
+          </div>
 
-              <p className="landing-pitch-text">{activeRole.pitch}</p>
+          {/* Agenda-style Expandable Positions Table */}
+          <ol className="ows-agenda ows-rise">
+            {filteredRows.map((row, idx) => {
+              const isOpen = openRowIndex === idx;
+              return (
+                <li
+                  key={row.ticker}
+                  className="ows-row"
+                  data-open={isOpen ? '' : undefined}
+                  style={{ '--k': idx } as React.CSSProperties}
+                >
+                  <div className="ows-row-main">
+                    <button
+                      type="button"
+                      className="ows-row-btn"
+                      aria-expanded={isOpen}
+                      onClick={() => setOpenRowIndex(isOpen ? -1 : idx)}
+                    >
+                      <span className="ows-row-time">
+                        <span>{row.ticker}</span>
+                        <span className="ows-row-end">{row.market}</span>
+                      </span>
 
-              <div className="landing-pitch-footer">
-                <div className="landing-pitch-specs">
-                  {activeRole.specs.map((spec, sIdx) => (
-                    <div key={sIdx} className="landing-pitch-spec-item">
-                      <CheckCircle2 size={14} />
-                      <span>{spec}</span>
+                      <span className="ows-row-body">
+                        <span className="ows-row-title">{row.name}</span>
+                        <span className="ows-row-who">{row.category}</span>
+                      </span>
+
+                      <span className="ows-row-quant">
+                        <span className="ows-row-val">{formatMoney(row.marketValueIdr)}</span>
+                        <span className={`ows-row-pnl ${row.plIdr >= 0 ? 'positive' : ''}`}>
+                          {row.plIdr >= 0 ? '+' : ''}
+                          {row.plPct.toFixed(2)}% ({formatMoney(row.plIdr)})
+                        </span>
+                      </span>
+
+                      <span className="ows-tag">
+                        {row.market === 'IDX' ? `${row.lots} Lot` : `${row.sharesOrUnits} Unit`}
+                      </span>
+
+                      <ChevronIcon open={isOpen} />
+                    </button>
+                  </div>
+
+                  <div className="ows-row-more" role="region" aria-label={row.name}>
+                    <div className="ows-row-inner">
+                      <p>{row.description}</p>
+                      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '10px', fontSize: '13px', color: 'var(--ows-ink)' }}>
+                        <div>
+                          <strong>Harga Beli Rata-Rata:</strong> {formatMoney(row.avgBuyIdr)}
+                        </div>
+                        <div>
+                          <strong>Harga Pasar Terkini:</strong> {formatMoney(row.marketPriceIdr)}
+                        </div>
+                        <div>
+                          <strong>Bobot Portofolio:</strong> {row.weightPct.toFixed(1)}%
+                        </div>
+                      </div>
+                      <Link href="/dashboard" className="ows-link">
+                        <SmallArrow size={11} /> Kelola posisi ini di Dashboard
+                      </Link>
                     </div>
-                  ))}
-                </div>
-
-                <Link href="/dashboard" className="btn-secondary landing-custody-btn">
-                  <span>{isID ? 'Coba di Dasbor' : 'Try in Dashboard'}</span>
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            </div>
-          </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         </section>
 
-        {/* 4. Feature Grid with Geometric SVG Marks (Onward Summit Style) */}
-        <section className="landing-features-section" id="arsitektur-fitur">
-          <div className="landing-container">
-            <div className="landing-section-intro">
-              <div className="landing-kicker">
-                <Layers size={15} />
-                <span>
-                  {isID
-                    ? 'ARSITEKTUR FITUR / 02'
-                    : 'PLATFORM ARCHITECTURE / 02'}
-                </span>
-              </div>
-              <h2 className="landing-section-title">
-                {isID
-                  ? 'Presisi Akuntansi Finansial Tanpa Kompromi'
-                  : 'Uncompromising Financial Accounting Precision'}
-              </h2>
-              <p className="landing-section-desc">
-                {isID
-                  ? 'Arsitektur teknis modern yang dirancang untuk kecepatan, kepemilikan data lokal, dan kejernihan analisis risiko kuantitatif.'
-                  : 'Modern technical architecture designed for speed, local data custody, and objective quantitative risk clarity.'}
+        {/* Section 4: Core Assets (On stage) */}
+        <section className="ows-sec ows-wrap" data-sec="speakers">
+          <span className="ows-kicker">Alam Semesta Aset</span>
+          <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
+            Pondasi Instrumen Terpilih
+          </h2>
+          <p className="ows-intro ows-rise">
+            Setiap instrumen di Portofin diproses sesuai karakteristik teknis aslinya, tanpa konversi sembrono dan tanpa manipulasi saldo.
+          </p>
+
+          <ul className="ows-speakers">
+            {CORE_ASSETS.map((asset, idx) => (
+              <li
+                key={asset.ticker}
+                className="ows-speaker ows-rise"
+                style={{ '--d': `${idx * 70}ms` } as React.CSSProperties}
+                tabIndex={0}
+              >
+                <div className="ows-portrait">
+                  <GenerativePortrait seed={asset.ticker} uid={uid} index={idx} />
+                  <p className="ows-bio">{asset.bio}</p>
+                </div>
+                <p className="ows-speaker-name">{asset.name}</p>
+                <p className="ows-speaker-role">{asset.role}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Section 5: Custody & Architecture (On location) */}
+        <section className="ows-sec ows-wrap" data-sec="venue">
+          <span className="ows-kicker">Keamanan & Kustodi</span>
+          <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
+            Infrastruktur Lokal Mandiri
+          </h2>
+
+          <div className="ows-venue ows-rise">
+            <div className="ows-venue-info">
+              <p className="ows-venue-name">Kedaulatan Data di Peramban Anda</p>
+              <p className="ows-venue-addr">
+                IndexedDB Local Storage · Web Crypto API AES-GCM
+                <br />
+                Klien Web Pribadi Tanpa Server Pusat
               </p>
+
+              <ul className="ows-notes">
+                <li>
+                  <SmallArrow size={10} />
+                  <span>Kustodi data tersimpan secara lokal dan aman di perangkat pengguna</span>
+                </li>
+                <li>
+                  <SmallArrow size={10} />
+                  <span>Tidak ada pelacakan identitas, analitik pihak ketiga, atau cookies pengintai</span>
+                </li>
+                <li>
+                  <SmallArrow size={10} />
+                  <span>Dukungan ekspor dan impor portofolio format terbuka (JSON/CSV)</span>
+                </li>
+                <li>
+                  <SmallArrow size={10} />
+                  <span>Opsi sinkronisasi multi-perangkat terenkripsi bila Anda membutuhkan</span>
+                </li>
+              </ul>
+
+              <div className="ows-venue-actions">
+                <Link href="/dashboard" className="ows-btn ows-btn--dark ows-btn--sm">
+                  <span>Buka Ruang Kustodi</span>
+                  <SmallArrow size={10} />
+                </Link>
+                <button
+                  type="button"
+                  className="ows-link"
+                  onClick={() => openAuthModal('signup')}
+                >
+                  <SmallArrow size={10} />
+                  <span>Aktifkan Sinkronisasi Terenkripsi</span>
+                </button>
+              </div>
             </div>
 
-            <div className="landing-features-grid">
-              {/* Feature 1: Automated Tracking */}
-              <article className="landing-feature-card">
-                <div className="landing-feature-mark" aria-hidden="true">
-                  <svg
-                    className="landing-mark-svg"
-                    width="28"
-                    height="28"
-                    viewBox="0 0 28 28"
-                    fill="none"
-                  >
-                    <path
-                      d="M7 21L21 7M21 7H10M21 7V18"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                <h3 className="landing-feature-title">
-                  {isID ? 'Valuasi Pasar Otomatis' : 'Automated Market Tracking'}
-                </h3>
-                <p className="landing-feature-desc">
-                  {isID
-                    ? 'Pembaruan harga saham BEI via Yahoo Finance (.JK) dan kripto via CoinGecko secara otomatis tanpa input manual berkala.'
-                    : 'Automated price updates for IDX equities via Yahoo Finance (.JK) and crypto via CoinGecko without recurring manual friction.'}
-                </p>
-              </article>
-
-              {/* Feature 2: Multi-Asset Telemetry */}
-              <article className="landing-feature-card">
-                <div className="landing-feature-mark" aria-hidden="true">
-                  <svg
-                    className="landing-mark-svg"
-                    width="28"
-                    height="28"
-                    viewBox="0 0 28 28"
-                    fill="none"
-                  >
-                    <circle cx="14" cy="14" r="10" stroke="currentColor" strokeWidth="2.2" />
-                    <circle cx="14" cy="14" r="4" stroke="currentColor" strokeWidth="2.2" />
-                  </svg>
-                </div>
-                <h3 className="landing-feature-title">
-                  {isID ? 'Telemetri Multi-Aset Terpadu' : 'Multi-Asset Telemetry'}
-                </h3>
-                <p className="landing-feature-desc">
-                  {isID
-                    ? 'Menyatukan konvensi Lot saham 100 lembar dan unit desimal kripto dalam satu buku besar akuntansi IDR dan USD yang koheren.'
-                    : 'Unifying 100-share stock lots and fractional crypto units into one cohesive accounting ledger in IDR and USD.'}
-                </p>
-              </article>
-
-              {/* Feature 3: Asset Allocation Radar */}
-              <article className="landing-feature-card">
-                <div className="landing-feature-mark" aria-hidden="true">
-                  <svg
-                    className="landing-mark-svg"
-                    width="28"
-                    height="28"
-                    viewBox="0 0 28 28"
-                    fill="none"
-                  >
-                    <path
-                      d="M14 4V24M4 14H24"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                    />
-                    <circle cx="14" cy="14" r="7" stroke="currentColor" strokeWidth="1.8" strokeDasharray="3 3" />
-                  </svg>
-                </div>
-                <h3 className="landing-feature-title">
-                  {isID ? 'Radar Alokasi & Diagnostik HHI' : 'Asset Allocation Radar & HHI'}
-                </h3>
-                <p className="landing-feature-desc">
-                  {isID
-                    ? 'Kalkulasi matematis HHI mengkuantifikasi konsentrasi risiko portofolio secara objektif tanpa spekulasi atau saran finansial.'
-                    : 'Mathematical HHI calculation quantifies portfolio risk concentration with 100% objective, non-advisory rigor.'}
-                </p>
-              </article>
-
-              {/* Feature 4: Zero-Friction Guest Mode */}
-              <article className="landing-feature-card">
-                <div className="landing-feature-mark" aria-hidden="true">
-                  <svg
-                    className="landing-mark-svg"
-                    width="28"
-                    height="28"
-                    viewBox="0 0 28 28"
-                    fill="none"
-                  >
-                    <path
-                      d="M6 8C6 6.89543 6.89543 6 8 6H20C21.1046 6 22 6.89543 22 8V20C22 21.1046 21.1046 22 20 22H8C6.89543 22 6 21.1046 6 20V8Z"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                    />
-                    <path d="M11 14L13.5 16.5L17.5 11.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <h3 className="landing-feature-title">
-                  {isID ? 'Mode Tamu Local-First' : 'Zero-Friction Local-First'}
-                </h3>
-                <p className="landing-feature-desc">
-                  {isID
-                    ? 'Mulai mencatat seketika di peramban Anda tanpa registrasi. Cadangkan ke PostgreSQL cloud kapan pun Anda siap.'
-                    : 'Start logging instantly in your browser without registration. Sync to cloud PostgreSQL whenever you choose.'}
-                </p>
-              </article>
-            </div>
+            <InteractiveMap uid={uid} name="Sentra Kustodi Lokal Peramban" />
           </div>
         </section>
 
-        {/* 5. Dual-Market Specification Table (Two-Column Asymmetric Layout) */}
-        <section className="landing-section" id="spesifikasi">
-          <div className="landing-container">
-            <div className="landing-split-showcase">
-              <div className="landing-split-info">
-                <div className="landing-kicker">
-                  <Layers size={15} />
-                  <span>
-                    {isID
-                      ? 'KAPABILITAS 03 / SPESIFIKASI PASAR GANDA'
-                      : 'CAPABILITY 03 / DUAL-MARKET SPECIFICATION'}
-                  </span>
-                </div>
-                <h2 className="landing-section-title">
-                  {isID
-                    ? 'Satu Buku Besar untuk Dua Karakter Pasar'
-                    : 'One Ledger Built for Two Distinct Market Conventions'}
-                </h2>
-                <p className="landing-section-desc">
-                  {isID
-                    ? 'Investor di Indonesia umumnya memiliki saham di Bursa Efek Indonesia sekaligus aset kripto global. Pencatatan di spreadsheet sering kali berantakan karena perbedaan satuan Lot (100 lembar) dan unit desimal kripto, serta perbedaan mata uang dasar IDR dan USD.'
-                    : 'Indonesian investors frequently hold both IDX equities and global crypto assets. Spreadsheet tracking often breaks down due to conflicting lot multipliers (100 shares per lot) versus fractional coin precision, alongside mixed IDR and USD cost bases.'}
-                </p>
-                <p className="landing-section-desc">
-                  {isID
-                    ? 'Portofin menyatukan kedua konvensi tersebut secara native di tingkat mesin pencatatan transaksi.'
-                    : 'Portofin unifies both conventions natively inside its transaction accounting engine.'}
-                </p>
-              </div>
+        {/* Section 6: FAQ (On your mind) */}
+        <section className="ows-sec ows-wrap" data-sec="faq">
+          <span className="ows-kicker">Transparansi & Bantuan</span>
+          <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
+            Pertanyaan yang Sering Diajukan
+          </h2>
 
-              <div className="landing-spec-card">
-                <div className="landing-spec-header">
-                  <span>
-                    {isID
-                      ? 'SPESIFIKASI PENCATATAN INSTRUMEN'
-                      : 'INSTRUMENT ACCOUNTING SPECIFICATION'}
-                  </span>
-                </div>
-                <table className="landing-spec-table">
-                  <thead>
-                    <tr>
-                      <th>{isID ? 'PARAMETER' : 'PARAMETER'}</th>
-                      <th>{isID ? 'SAHAM BEI (IDX)' : 'IDX EQUITIES'}</th>
-                      <th>{isID ? 'ASET KRIPTO' : 'CRYPTO ASSETS'}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="spec-param">
-                        {isID ? 'Satuan Kuantitas' : 'Quantity Unit'}
-                      </td>
-                      <td className="tabular">1 Lot = 100 {isID ? 'Lembar' : 'Shares'}</td>
-                      <td className="tabular">
-                        {isID ? 'Desimal (hingga 8 digit)' : 'Fractional (up to 8 decimals)'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="spec-param">
-                        {isID ? 'Mata Uang Input' : 'Input Currency'}
-                      </td>
-                      <td className="tabular">IDR (Rupiah)</td>
-                      <td className="tabular">IDR {isID ? 'atau' : 'or'} USD</td>
-                    </tr>
-                    <tr>
-                      <td className="spec-param">
-                        {isID ? 'Metode Cost-Basis' : 'Cost-Basis Method'}
-                      </td>
-                      <td>Weighted Average / {isID ? 'Lembar' : 'Share'}</td>
-                      <td>Weighted Average / Unit</td>
-                    </tr>
-                    <tr>
-                      <td className="spec-param">
-                        {isID ? 'Sumber Harga Live' : 'Live Price Feed'}
-                      </td>
-                      <td className="tabular">Yahoo Finance (.JK)</td>
-                      <td className="tabular">CoinGecko Market API</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 6. Interactive Pass / Ticket Mockup (Onward Summit Style) */}
-        <section className="landing-pass-section" id="tiket-akses">
-          <div className="landing-container">
-            <div className="landing-pass-grid">
-              <div className="landing-pass-info">
-                <div className="landing-kicker">
-                  <ShieldCheck size={15} />
-                  <span>
-                    {isID
-                      ? 'PAS INVESTOR / AKSES MANDIRI'
-                      : 'INVESTOR PASS / SELF-SERVE ACCESS'}
-                  </span>
-                </div>
-                <h2 className="landing-section-title">
-                  {isID
-                    ? 'Tiket Masuk Ruang Kerja Portofin Anda'
-                    : 'Your Portofin Investor Workspace Pass'}
-                </h2>
-                <p className="landing-section-desc">
-                  {isID
-                    ? 'Dapatkan akses langsung ke seluruh perangkat pencatatan akuntansi portofolio, kalkulator konsentrasi risiko HHI, dan buku besar transaksi tanpa registrasi awal.'
-                    : 'Get direct access to complete portfolio accounting tools, HHI risk concentration diagnostics, and transaction ledgers with zero upfront friction.'}
-                </p>
-                <div className="landing-hero-trust-strip" role="list">
-                  <div className="landing-trust-item" role="listitem">
-                    <CheckCircle2 size={15} className="landing-trust-icon" />
-                    <span>{isID ? 'Akses Instan Mode Tamu' : 'Instant Guest Sandbox'}</span>
-                  </div>
-                  <div className="landing-trust-item" role="listitem">
-                    <Database size={15} className="landing-trust-icon" />
-                    <span>{isID ? 'Data Tersimpan Lokal di Browser' : 'Local Browser Custody'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Interactive Pass / Ticket Component with Perforation Cutout Notches */}
-              <div className="landing-ticket" role="region" aria-label="Portofin Investor Pass">
-                <div className="landing-ticket-top">
-                  <span className="landing-ticket-kicker">
-                    <CheckCircle2 size={14} />
-                    {isID ? 'PAS SANDBOX TERVERIFIKASI' : 'VERIFIED SANDBOX PASS'}
-                  </span>
-                  <h3 className="landing-ticket-title">
-                    {isID ? 'Ruang Kerja Investor Portofin' : 'Portofin Investor Workspace'}
+          <div className="ows-faq ows-rise">
+            {FAQ_ITEMS.map((item, idx) => {
+              const isOpen = openFaqIndex === idx;
+              return (
+                <div key={idx} className="ows-faq-item" data-open={isOpen ? '' : undefined}>
+                  <h3 className="ows-faq-h">
+                    <button
+                      type="button"
+                      className="ows-faq-q"
+                      aria-expanded={isOpen}
+                      onClick={() => setOpenFaqIndex(isOpen ? -1 : idx)}
+                    >
+                      <span>{item.q}</span>
+                      <span className="ows-faq-icon" aria-hidden="true" />
+                    </button>
                   </h3>
-                  <p className="landing-ticket-meta">
-                    {isID
-                      ? 'IDR & USD Multi-Currency · Local-First Storage · Non-Advisory Engine'
-                      : 'IDR & USD Multi-Currency · Local-First Storage · Non-Advisory Engine'}
+                  <div className="ows-faq-a" role="region">
+                    <div className="ows-row-inner">
+                      <p>{item.a}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Section 7: Access Pass & Registration (The Authentic Ticket Band) */}
+        <section className="ows-band" data-sec="register">
+          <InteractiveCanvasField
+            mode="band"
+            glyph="arrow"
+            lightColor="#dbe6ff"
+            darkColor="#3a6be0"
+            cell={15}
+          />
+
+          <div className="ows-wrap ows-band-grid">
+            <div className="ows-band-copy">
+              <span className="ows-kicker ows-kicker--light">Akses Langsung Tanpa Hambatan</span>
+              <h2 className="ows-band-title">Mulai Buku Besar Anda</h2>
+              <p className="ows-band-sub">
+                Tidak perlu kartu kredit atau pendaftaran formulir rumit. Langsung buka sandbox lokal dan rasakan presisi manajemen aset yang sesungguhnya.
+              </p>
+
+              <div className="ows-count" aria-live="off">
+                <span className="ows-count-label">Pasar Modal BEI Buka Dalam</span>
+                <div className="ows-count-cells">
+                  <span className="ows-count-cell">
+                    <span className="ows-count-v">{padZero(countdown.hours)}</span>
+                    <span className="ows-count-k">Jam</span>
+                  </span>
+                  <span className="ows-count-cell">
+                    <span className="ows-count-v">{padZero(countdown.minutes)}</span>
+                    <span className="ows-count-k">Menit</span>
+                  </span>
+                  <span className="ows-count-cell">
+                    <span className="ows-count-v">{padZero(countdown.seconds)}</span>
+                    <span className="ows-count-k">Detik</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="ows-seats">
+                <div className="ows-seats-top">
+                  <span>
+                    <strong>100%</strong> Kedaulatan Data Lokal
+                  </span>
+                  <span>Peramban Mandiri</span>
+                </div>
+                <div className="ows-meter" role="meter" aria-label="Status Kustodi" aria-valuenow={100}>
+                  <i style={{ width: '100%' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Authentic Physical-Digital Ticket */}
+            <div className="ows-card" ref={ticketRef}>
+              <div className="ows-ticket" role="status">
+                <div className="ows-ticket-top">
+                  <span className="ows-kicker">Tiket Akses Portofin</span>
+                  <p className="ows-ticket-name">Tiket Tamu Mandiri</p>
+                  <p className="ows-ticket-meta">
+                    Kustodi IndexedDB · Tanpa Registrasi · Presisi BEI & Kripto
                   </p>
                 </div>
 
-                {/* Perforation line with circular notch cutouts */}
-                <div className="landing-ticket-perf" aria-hidden="true" />
+                <div className="ows-ticket-perf" aria-hidden="true" />
 
-                <div className="landing-ticket-bot">
-                  <div className="landing-ticket-id-strip">
-                    <div>
-                      <span className="landing-ticket-label">
-                        {isID ? 'KODE AKSES PAS' : 'PASS IDENTIFIER'}
-                      </span>
-                      <span className="landing-ticket-code tabular">PASS-PTFN-2026-X79K</span>
-                    </div>
-                    <span className="landing-ticket-badge">
-                      <span className="landing-live-dot" />
-                      {isID ? 'AKTIF DI PERAMBAN' : 'BROWSER ACTIVE'}
-                    </span>
+                <div className="ows-ticket-bot">
+                  <div>
+                    <span className="ows-ticket-label">Kode Akses Lokal</span>
+                    <span className="ows-ticket-code">PTF-8842</span>
                   </div>
 
-                  <div className="landing-ticket-perks">
-                    <div className="landing-ticket-perk">
-                      <Check size={15} />
-                      <span>
-                        {isID
-                          ? 'Pencatatan aset tanpa batas di browser Anda'
-                          : 'Unlimited asset tracking stored directly in your browser'}
-                      </span>
+                  <div className="ows-ticket-perks">
+                    <div className="ows-ticket-perk">
+                      <SmallArrow size={10} />
+                      <span>Kalkulasi lot saham otomatis (100 lembar)</span>
                     </div>
-                    <div className="landing-ticket-perk">
-                      <Check size={15} />
-                      <span>
-                        {isID
-                          ? '100% Bebas iklan, pelacak, dan tanpa perlu email di awal'
-                          : '100% Ad and tracker free, zero upfront email required'}
-                      </span>
+                    <div className="ows-ticket-perk">
+                      <SmallArrow size={10} />
+                      <span>Presisi kripto 8 desimal tanpa distorsi floating point</span>
                     </div>
-                    <div className="landing-ticket-perk">
-                      <Check size={15} />
-                      <span>
-                        {isID
-                          ? 'Sinkronisasi ke cloud PostgreSQL kapan pun Anda siap'
-                          : 'Idempotent cloud PostgreSQL migration whenever you are ready'}
-                      </span>
+                    <div className="ows-ticket-perk">
+                      <SmallArrow size={10} />
+                      <span>Telemetri risiko konsentrasi Indeks HHI real-time</span>
                     </div>
                   </div>
 
-                  <div className="landing-ticket-actions">
-                    <Link href="/dashboard" className="btn-primary landing-hero-btn-primary">
-                      <span>{isID ? 'Buka Dasbor Tamu (Instan)' : 'Open Guest Dashboard'}</span>
-                      <ArrowRight size={16} />
+                  <div className="ows-ticket-actions">
+                    <Link
+                      href="/dashboard"
+                      className="ows-btn ows-btn--accent ows-btn--wide"
+                      style={{ height: '46px' }}
+                    >
+                      <span>Buka Sandbox Tamu Sekarang</span>
+                      <SmallArrow size={12} />
                     </Link>
-
                     <button
                       type="button"
-                      onClick={() => openAuthModal()}
-                      className="btn-secondary landing-hero-btn-cloud"
+                      className="ows-link"
+                      onClick={handleCopyPass}
                     >
-                      <CloudUpload size={16} />
-                      <span>{isID ? 'Hubungkan Cloud' : 'Connect Cloud'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleCopyPassCode}
-                      className="btn-secondary"
-                      title={isID ? 'Salin Kode Akses' : 'Copy Pass Code'}
-                    >
-                      {copiedPass ? <Check size={15} /> : <Copy size={15} />}
-                      <span>{copiedPass ? (isID ? 'Tersalin' : 'Copied') : (isID ? 'Salin Kode' : 'Copy Code')}</span>
+                      {copiedPass ? 'Kode Tersalin!' : 'Salin Kode Tiket'}
                     </button>
                   </div>
                 </div>
@@ -1311,61 +1672,34 @@ export default function LandingPage() {
         </section>
       </main>
 
-      {/* 7. Watermark Typography Footer (Onward Summit Style) */}
-      <footer className="landing-footer">
-        <div className="landing-container">
-          <div className="landing-footer-grid">
-            <div className="landing-brand-group">
-              <div className="landing-brand-logo">
-                <img
-                  src="/logo.png"
-                  alt="Portofin"
-                  width={22}
-                  height={22}
-                  style={{ borderRadius: 5 }}
-                />
-              </div>
-              <span className="landing-brand-name">Portofin</span>
-            </div>
-
-            <nav className="landing-footer-links" aria-label="Footer Navigation">
-              <Link href="/dashboard" className="landing-footer-link">
-                {isID ? 'Dasbor Portofolio' : 'Portfolio Dashboard'}
-              </Link>
-              <Link href="/transactions" className="landing-footer-link">
-                {isID ? 'Riwayat Transaksi' : 'Transaction Ledger'}
-              </Link>
-              <Link href="/ai-advisor" className="landing-footer-link">
-                {isID ? 'Diagnostik Risiko' : 'Risk Diagnostics'}
-              </Link>
-              <Link href="/login" className="landing-footer-link">
-                {isID ? 'Halaman Login' : 'Login Page'}
-              </Link>
-            </nav>
-
-            <div className="landing-footer-meta">
-              <p className="landing-footer-copy">
-                © 2026 Portofin.{' '}
-                {isID
-                  ? 'Buku besar pencatatan & diagnostik risiko portofolio saham BEI dan kripto.'
-                  : 'IDX equity and crypto portfolio accounting ledger & risk diagnostics.'}
-              </p>
-
-              <div className="landing-footer-telemetry">
-                <span className="landing-live-dot" />
-                <span>
-                  {isID
-                    ? 'Local-First Ready · Kurs Acuan Rp 16.400 / USD · Non-Advisory'
-                    : 'Local-First Ready · Reference FX IDR 16,400 / USD · Non-Advisory'}
-                </span>
-              </div>
-            </div>
+      {/* Signature Watermark Footer */}
+      <footer className="ows-foot">
+        <div className="ows-wrap ows-foot-grid">
+          <div className="ows-brand ows-brand--foot">
+            <span className="ows-brand-word">Portofin</span>
+            <BrandArrowGlyph />
           </div>
 
-          {/* Massive Editorial Typographic Watermark (Signature Onward Summit Technique) */}
-          <div className="landing-footer-watermark" aria-hidden="true">
-            PORTOFIN
-          </div>
+          <nav className="ows-foot-links" aria-label="Footer Navigation">
+            <Link href="/dashboard">Dashboard</Link>
+            <Link href="/dashboard/analytics">Analisis</Link>
+            <Link href="/dashboard/settings">Pengaturan</Link>
+            <button
+              type="button"
+              onClick={() => openAuthModal('signin')}
+              style={{ color: 'var(--ows-muted)', cursor: 'pointer' }}
+            >
+              Masuk Cloud
+            </button>
+          </nav>
+
+          <p className="ows-foot-note">
+            © 2026 Portofin Ledger. Buku besar keuangan presisi multi-aset untuk saham BEI dan aset digital. Bebas biaya dan bersumber terbuka.
+          </p>
+        </div>
+
+        <div className="ows-foot-word" aria-hidden="true">
+          PORTOFIN
         </div>
       </footer>
     </div>
