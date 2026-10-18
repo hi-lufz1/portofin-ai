@@ -502,31 +502,31 @@ function InteractivePrivacySchematic() {
       <div className="ows-blueprint-grid" aria-hidden="true" />
 
       <div className="ows-blueprint-header">
-        <span className="ows-blueprint-tag">Privat di Perangkat Anda</span>
+        <span className="ows-blueprint-tag">Arsitektur Sistem</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#94A3B8' }}>
-          Tanpa Database Publik
+          Cepat, Akurat & Privat
         </span>
       </div>
 
       <div className="ows-blueprint-body">
         <div className="ows-blueprint-node">
-          <span className="ows-blueprint-node-title">1. Browser Anda</span>
+          <span className="ows-blueprint-node-title">1. Pencatatan Aset Fleksibel</span>
           <span className="ows-blueprint-node-desc">
-            Transaksi dan catatan aset disimpan di perangkat Anda sendiri. Anda memegang kendali penuh.
+            Mendukung pencatatan lot saham BEI (1 lot = 100 lembar) dan aset kripto hingga presisi 8 desimal.
           </span>
         </div>
 
         <div className="ows-blueprint-node">
-          <span className="ows-blueprint-node-title">2. Pembaruan Harga Pasar</span>
+          <span className="ows-blueprint-node-title">2. Pembaruan Harga Real-Time</span>
           <span className="ows-blueprint-node-desc">
-            Harga saham BEI dan kripto dibaca otomatis untuk memperbarui nilai portofolio Anda.
+            Harga saham dan kripto diperbarui otomatis untuk menghitung nilai terkini serta keuntungan atau kerugian (P/L).
           </span>
         </div>
 
         <div className="ows-blueprint-node">
-          <span className="ows-blueprint-node-title">3. Server Eksternal</span>
-          <span className="ows-blueprint-node-desc" style={{ color: '#F87171' }}>
-            Nol pelacak iklan. Portofin tidak menjual data kekayaan Anda kepada pihak mana pun.
+          <span className="ows-blueprint-node-title">3. Analisis Cerdas & AI Advisor</span>
+          <span className="ows-blueprint-node-desc" style={{ color: '#60A5FA' }}>
+            Menganalisis diversifikasi aset, memetakan risiko portofolio, dan menyimulasikan rebalancing alokasi.
           </span>
         </div>
       </div>
@@ -534,9 +534,9 @@ function InteractivePrivacySchematic() {
       <div className="ows-blueprint-footer">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
           <span className="ows-live-dot" />
-          Penyimpanan Privat Aktif di Browser Anda
+          Penyimpanan lokal di browser (Mode Tamu) atau cloud sinkron
         </span>
-        <span style={{ color: '#94A3B8' }}>Bebas Dipakai Tanpa Login</span>
+        <span style={{ color: '#94A3B8' }}>Tersedia untuk Desktop & Mobile</span>
       </div>
     </div>
   );
@@ -606,19 +606,19 @@ const BASE_LEDGER: LedgerRow[] = [
 const INVESTOR_PROFILES = [
   {
     role: 'Investor Saham BEI',
-    pitch: 'Bagi Anda yang rutin mengakumulasi lot saham dividen atau blue-chip di Bursa Efek Indonesia dan membutuhkan catatan harga beli rata-rata yang rapi.',
+    pitch: 'Bagi Anda yang rutin mengakumulasi saham dividen atau emiten BEI dan membutuhkan pencatatan lot serta rata-rata harga beli otomatis.',
   },
   {
-    role: 'Trader & Pemilik Kripto',
-    pitch: 'Bagi Anda yang menyimpan Bitcoin, Ethereum, dan aset digital dengan pencatatan nilai rupiah otomatis tanpa pusing menghitung kurs manual.',
+    role: 'Pemilik Aset Kripto',
+    pitch: 'Bagi Anda yang menyimpan Bitcoin, Ethereum, dan altcoin dengan pembaruan harga pasar langsung serta konversi nilai rupiah otomatis.',
   },
   {
     role: 'Investor Multi-Aset',
-    pitch: 'Bagi Anda yang membagi dana ke berbagai instrumen seperti saham, kripto, reksa dana, hingga kas deposito untuk menjaga kestabilan finansial.',
+    pitch: 'Bagi Anda yang membagi modal ke saham, kripto, reksa dana, hingga kas deposito untuk melihat total kekayaan dalam satu dasbor.',
   },
   {
-    role: 'Pengguna yang Menjaga Privasi',
-    pitch: 'Bagi Anda yang menghendaki catatan kekayaan pribadi tersimpan di perangkat sendiri tanpa harus mendaftar atau khawatir data disalahgunakan.',
+    role: 'Pencari Analisis & AI',
+    pitch: 'Bagi Anda yang membutuhkan evaluasi risiko portofolio, deteksi bias investasi, serta simulasi rebalancing alokasi secara objektif.',
   },
 ];
 
@@ -655,24 +655,28 @@ const ASSET_CLASSES = [
 
 const FAQ_ITEMS = [
   {
-    q: 'Apakah Portofin web app berbayar atau ada biaya langganan?',
-    a: 'Tidak. Portofin 100% gratis digunakan dan bersumber terbuka (open source). Tidak ada biaya tersembunyi, tidak ada fitur berbayar yang dikunci, dan tidak ada iklan komersial.',
+    q: 'Apakah Portofin gratis digunakan?',
+    a: 'Ya, Portofin sepenuhnya gratis digunakan tanpa biaya langganan, tanpa biaya tersembunyi, dan tanpa iklan komersial. Proyek ini juga bersifat open source.',
   },
   {
     q: 'Apakah saya wajib membuat akun untuk menggunakan Portofin?',
-    a: 'Tidak. Anda bisa langsung membuka dasbor dalam Mode Tamu tanpa mendaftar. Data transaksi Anda akan tersimpan di browser Anda sendiri.',
+    a: 'Tidak wajib. Anda bisa langsung membuka dasbor dalam Mode Tamu. Semua catatan transaksi Anda akan tersimpan langsung di browser perangkat Anda.',
+  },
+  {
+    q: 'Kapan saya perlu masuk atau membuat akun?',
+    a: 'Jika Anda ingin membuka dan memperbarui portofolio yang sama dari perangkat lain (misalnya dari HP saat bepergian dan dari laptop saat di rumah), Anda cukup masuk dengan akun Google atau email.',
   },
   {
     q: 'Bagaimana Portofin menghitung saham Indonesia (BEI)?',
-    a: 'Portofin mengikuti aturan resmi Bursa Efek Indonesia di mana 1 lot setara dengan tepat 100 lembar saham. Perhitungan modal dan keuntungan dilakukan pada level harga per lembar.',
+    a: 'Portofin mengikuti standar resmi Bursa Efek Indonesia di mana 1 lot setara dengan 100 lembar saham. Perhitungan modal beli rata-rata dan imbal hasil (P/L) dihitung otomatis secara presisi.',
   },
   {
-    q: 'Apakah data saya bisa diekspor atau dicadangkan?',
-    a: 'Bisa. Anda dapat mengunduh seluruh data portofolio dalam file JSON atau CSV kapan saja, atau menghubungkannya ke akun cloud jika ingin diakses dari HP dan laptop sekaligus.',
+    q: 'Apa itu fitur AI Advisor di Portofin?',
+    a: 'AI Advisor adalah asisten berbasis kecerdasan buatan yang menganalisis portofolio Anda. Fitur ini menyajikan ringkasan performa harian, mengidentifikasi risiko konsentrasi aset, memetakan profil gaya investasi Anda, serta menyediakan simulasi penyeimbangan (rebalancing) alokasi.',
   },
   {
     q: 'Apakah Portofin terhubung langsung dengan rekening bank atau akun sekuritas saya?',
-    a: 'Tidak. Portofin adalah aplikasi pencatat mandiri. Anda memasukkan data transaksi sendiri, sehingga tidak pernah ada risiko peretasan atau akses tidak sah terhadap dana investasi Anda.',
+    a: 'Tidak. Portofin adalah aplikasi pelacak mandiri. Portofin tidak meminta akses login ke rekening bank atau sekuritas Anda, sehingga saldo dan dana investasi Anda tetap aman sepenuhnya.',
   },
 ];
 
@@ -843,7 +847,7 @@ export default function LandingPage() {
           <div className="ows-when">
             <span>Saham BEI & Kripto</span>
             <span className="ows-when-bar" aria-hidden="true" />
-            <span>Presisi Multi-Aset</span>
+            <span>Dengan AI Advisor</span>
             <span className="ows-when-cal">
               <SmallArrow size={11} />
             </span>
@@ -909,16 +913,16 @@ export default function LandingPage() {
 
           <p className="ows-tagline">
             <span className="ows-tag-line" style={{ '--i': 0 } as React.CSSProperties}>
-              Aplikasi Pelacak Portofolio Saham BEI & Kripto
+              Pelacak Portofolio Saham BEI & Kripto dengan AI Advisor
             </span>
             <span className="ows-tag-line" style={{ '--i': 1 } as React.CSSProperties}>
-              Catat transaksi, hitung laba rugi real-time, dan pantau alokasi aset Anda. Privat dan bisa langsung dipakai tanpa login.
+              Catat transaksi lot saham dan aset kripto, pantau imbal hasil secara real-time, dan dapatkan analisis cerdas untuk portofolio Anda.
             </span>
           </p>
 
           <div className="ows-hero-actions">
             <Link href="/dashboard" className="ows-btn ows-btn--accent">
-              <span>Coba Mode Tamu (Tanpa Login)</span>
+              <span>Buka Dasbor (Gratis Tanpa Login)</span>
               <SmallArrow size={12} />
             </Link>
             <button
@@ -926,7 +930,7 @@ export default function LandingPage() {
               className="ows-btn ows-btn--ghost-white"
               onClick={() => openAuthModal(user ? 'signin' : 'signup')}
             >
-              <span>{user ? 'Kelola Akun Cloud' : 'Masuk ke Akun Cloud'}</span>
+              <span>{user ? 'Kelola Akun' : 'Masuk dengan Akun'}</span>
             </button>
           </div>
 
@@ -934,7 +938,7 @@ export default function LandingPage() {
             <div className="ows-hero-resume">
               <span className="ows-live-dot" />
               <span>
-                Sesi Anda aktif: <strong>{guestAssetCount} aset</strong> tersimpan di browser ini.
+                Sesi aktif: <strong>{guestAssetCount} aset</strong> tersimpan di browser ini.
               </span>
               <Link href="/dashboard" className="ows-link" style={{ color: '#FFFFFF', textDecoration: 'underline' }}>
                 Lanjutkan ke Dasbor
@@ -950,10 +954,10 @@ export default function LandingPage() {
         <section className="ows-sec ows-wrap" data-sec="expect">
           <span className="ows-kicker">Fitur Utama</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
-            Pelacakan Portofolio yang Rapi dan Akurat
+            Semua Kebutuhan Portofolio dalam Satu Dasbor
           </h2>
           <p className="ows-intro ows-rise">
-            Dibuat untuk investor Indonesia yang ingin mengelola aset saham lokal dan kripto secara terpadu tanpa ribet dan tanpa kompromi privasi.
+            Dirancang untuk investor Indonesia yang ingin mencatat saham lokal dan aset digital secara rapi, akurat, dan didukung analisis cerdas.
           </p>
 
           <div className="ows-features">
@@ -961,9 +965,9 @@ export default function LandingPage() {
               <div className="ows-feature-mark">
                 <GeometricMark kind="arrow" uid={uid} index={0} />
               </div>
-              <h3 className="ows-feature-title">Pencatatan Lot Saham BEI yang Tepat</h3>
+              <h3 className="ows-feature-title">Presisi Saham BEI (Lot) & Kripto</h3>
               <p className="ows-feature-text">
-                Sesuai standar bursa: 1 lot = 100 lembar. Harga beli rata-rata dihitung otomatis setiap kali Anda menambah posisi saham baru.
+                Perhitungan otomatis 1 lot = 100 lembar saham BEI dan kalkulasi desimal kripto. Nilai portofolio serta imbal hasil (P/L) terhitung otomatis secara real-time.
               </p>
             </article>
 
@@ -971,9 +975,9 @@ export default function LandingPage() {
               <div className="ows-feature-mark">
                 <GeometricMark kind="ring" uid={uid} index={1} />
               </div>
-              <h3 className="ows-feature-title">Pantau Alokasi & Keseimbangan Portofolio</h3>
+              <h3 className="ows-feature-title">Analisis Cerdas & AI Advisor</h3>
               <p className="ows-feature-text">
-                Lihat perbandingan porsi saham dan kripto, ketahui pembagian modal Anda, dan hindari risiko modal yang bertumpu pada satu aset saja.
+                Dapatkan evaluasi risiko konsentrasi aset, ringkasan narasi performa, analisis profil investor, serta simulasi rebalancing alokasi aset Anda.
               </p>
             </article>
 
@@ -981,9 +985,9 @@ export default function LandingPage() {
               <div className="ows-feature-mark">
                 <GeometricMark kind="plus" uid={uid} index={2} />
               </div>
-              <h3 className="ows-feature-title">Privat & Bebas Digunakan Tanpa Syarat</h3>
+              <h3 className="ows-feature-title">Fleksibel: Mode Tamu & Sinkronisasi Cloud</h3>
               <p className="ows-feature-text">
-                Langsung gunakan di browser Anda tanpa perlu mendaftar email atau kartu kredit. Data Anda tersimpan di perangkat Anda sendiri.
+                Bisa langsung dicoba di browser tanpa registrasi akun, atau masuk dengan Google untuk sinkronisasi otomatis antara ponsel dan laptop Anda.
               </p>
             </article>
           </div>
@@ -1042,16 +1046,16 @@ export default function LandingPage() {
           </p>
         </section>
 
-        {/* Section 3: Live Ledger Simulation */}
+        {/* Section 3: Live Portfolio Simulation */}
         <section className="ows-sec ows-wrap" data-sec="agenda">
           <div className="ows-sec-head">
             <div>
-              <span className="ows-kicker">Simulasi Portofolio Langsung</span>
+              <span className="ows-kicker">Simulasi Interaktif</span>
               <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
-                Buku Besar Posisi & Simulasi Beli
+                Simulasi Portofolio & Kalkulasi Otomatis
               </h2>
               <p className="ows-intro ows-rise">
-                Lihat bagaimana Portofin menghitung keuntungan belum terealisasi dan mengalkulasi ulang nilai portofolio saat Anda menambah posisi baru.
+                Coba simulasi penambahan posisi saham di bawah ini untuk melihat bagaimana Portofin menghitung harga beli rata-rata, imbal hasil (P/L), dan bobot alokasi secara real-time.
               </p>
             </div>
 
@@ -1249,36 +1253,36 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Section 5: Privacy & Security */}
+        {/* Section 5: Privacy & Multi-Device */}
         <section className="ows-sec ows-wrap" data-sec="venue">
-          <span className="ows-kicker">Privasi & Keamanan</span>
+          <span className="ows-kicker">Privasi & Fleksibilitas</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
-            Kedaulatan Data Finansial Anda Terjaga Penuh
+            Kontrol Penuh Portofolio di Tangan Anda
           </h2>
 
           <div className="ows-venue ows-rise">
             <div className="ows-venue-info">
-              <p className="ows-venue-name">Data Anda adalah Hak Anda</p>
+              <p className="ows-venue-name">Data Keuangan Anda Tetap Milik Anda</p>
               <p className="ows-venue-addr">
-                Portofin dirancang dengan prinsip bahwa informasi keuangan Anda tidak boleh diintip, dijual, atau disimpan di server publik kami.
+                Portofin memberi Anda kebebasan penuh: gunakan langsung di browser tanpa login, atau masuk jika ingin menyinkronkan data portofolio antar-perangkat.
               </p>
 
               <ul className="ows-notes">
                 <li>
                   <SmallArrow size={10} />
-                  <span>Data transaksi Anda disimpan privat langsung di browser Anda sendiri</span>
+                  <span>Langsung pakai tanpa registrasi, tanpa nomor HP, dan tanpa email</span>
                 </li>
                 <li>
                   <SmallArrow size={10} />
-                  <span>Bisa langsung dipakai tanpa login, tanpa nomor HP, dan tanpa email</span>
+                  <span>Data tersimpan privat di perangkat Anda saat menggunakan Mode Tamu</span>
+                </li>
+                <li>
+                  <SmallArrow size={10} />
+                  <span>Sinkronisasi akun Google untuk akses praktis dari ponsel dan laptop</span>
                 </li>
                 <li>
                   <SmallArrow size={10} />
                   <span>Bebas mengunduh file cadangan portofolio (JSON atau CSV) kapan saja</span>
-                </li>
-                <li>
-                  <SmallArrow size={10} />
-                  <span>Tersedia opsi sinkronisasi akun jika ingin membuka portofolio dari HP</span>
                 </li>
               </ul>
 
@@ -1293,7 +1297,7 @@ export default function LandingPage() {
                   onClick={() => openAuthModal('signup')}
                 >
                   <SmallArrow size={10} />
-                  <span>Buat Akun untuk Akses Multi-Perangkat</span>
+                  <span>Masuk untuk Akses Multi-Perangkat</span>
                 </button>
               </div>
             </div>
@@ -1349,17 +1353,17 @@ export default function LandingPage() {
           <div className="ows-wrap ows-band-grid">
             <div className="ows-band-copy">
               <span className="ows-kicker ows-kicker--light">Mulai Sekarang</span>
-              <h2 className="ows-band-title">Kelola Portofolio Anda dengan Lebih Rapi</h2>
+              <h2 className="ows-band-title">Pantau Seluruh Portofolio Anda Hari Ini</h2>
               <p className="ows-band-sub">
-                Tanpa biaya, tanpa formulir panjang, dan tanpa kartu kredit. Anda bisa langsung mencoba dasbor Portofin dalam hitungan detik.
+                Gratis, tanpa formulir berbelit, dan tanpa kartu kredit. Anda bisa langsung mencoba dasbor Portofin dalam hitungan detik.
               </p>
 
               <div className="ows-count" aria-live="off">
-                <span className="ows-count-label">Status Layanan & Pasar</span>
+                <span className="ows-count-label">Kesiapan Layanan & Pasar</span>
                 <div className="ows-count-cells" style={{ marginTop: '12px' }}>
                   <div className="ows-count-cell" style={{ flex: 1, padding: '12px 14px', alignItems: 'flex-start' }}>
                     <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#93C5FD', fontFamily: 'var(--font-mono)' }}>Bursa Saham BEI</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF', marginTop: '4px' }}>Data Pasar Terhubung</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF', marginTop: '4px' }}>1 Lot = 100 Lembar</span>
                   </div>
                   <div className="ows-count-cell" style={{ flex: 1, padding: '12px 14px', alignItems: 'flex-start' }}>
                     <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#93C5FD', fontFamily: 'var(--font-mono)' }}>Aset Kripto Global</span>
@@ -1371,11 +1375,11 @@ export default function LandingPage() {
               <div className="ows-seats">
                 <div className="ows-seats-top">
                   <span>
-                    <strong>100%</strong> Privat di Perangkat Anda
+                    <strong>Mode Tamu & Akun Cloud</strong>
                   </span>
-                  <span>Bebas Digunakan</span>
+                  <span>100% Bebas Digunakan</span>
                 </div>
-                <div className="ows-meter" role="meter" aria-label="Status Privasi" aria-valuenow={100}>
+                <div className="ows-meter" role="meter" aria-label="Status Akses" aria-valuenow={100}>
                   <i style={{ width: '100%' }} />
                 </div>
               </div>
@@ -1390,7 +1394,7 @@ export default function LandingPage() {
                     Mulai dengan Mode Tamu
                   </h3>
                   <p style={{ fontSize: '13.5px', color: 'var(--ows-muted)', marginTop: '4px', lineHeight: 1.5 }}>
-                    Langsung catat dan pantau aset Anda. Data akan tersimpan aman di browser Anda saat ini.
+                    Langsung catat dan pantau aset Anda di browser. Anda bebas menghubungkan akun kapan saja jika ingin sinkronisasi ke ponsel.
                   </p>
                 </div>
 
@@ -1405,7 +1409,7 @@ export default function LandingPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <SmallArrow size={10} />
-                    <span>Konversi nilai rupiah dan dollar (IDR/USD) otomatis</span>
+                    <span>Analisis portofolio cerdas dengan AI Advisor</span>
                   </div>
                 </div>
 
