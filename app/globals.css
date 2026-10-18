@@ -4038,6 +4038,480 @@ input, select, textarea { font: inherit; }
   color: var(--accent);
 }
 
+/* ============================================
+   ONWARD SUMMIT EDITORIAL ENHANCEMENTS
+   ============================================ */
+
+/* Telemetry Pill in Floating Navbar */
+.landing-telemetry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.landing-telemetry-pill .landing-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+/* Role Selector Tabs (Onward Summit Style) */
+.landing-roles-section {
+  padding: 84px 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 28px 0 24px;
+}
+
+.landing-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 18px;
+  border-radius: var(--radius);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-dim);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.18s ease;
+}
+
+.landing-chip:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  border-color: rgba(15, 23, 42, 0.22);
+}
+
+.landing-chip.active {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border-color: #BFDBFE;
+  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.12);
+}
+
+.landing-chip-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2.5px;
+  width: 100%;
+  background: #1D4ED8;
+}
+
+.landing-pitch-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  padding: 36px 40px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 1) inset, 0 12px 32px -6px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.landing-pitch-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 1) inset, 0 18px 44px -8px rgba(15, 23, 42, 0.08);
+}
+
+.landing-pitch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.landing-pitch-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #1D4ED8;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  padding: 5px 12px;
+  border-radius: 6px;
+}
+
+.landing-pitch-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.landing-pitch-text {
+  font-size: clamp(20px, 2.3vw, 29px);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.landing-pitch-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.landing-pitch-specs {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.landing-pitch-spec-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.landing-pitch-spec-item svg {
+  color: #1D4ED8;
+}
+
+/* Feature Grid with Geometric SVG Marks */
+.landing-features-section {
+  padding: 88px 0;
+  background: #F8FAFC;
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-top: 40px;
+}
+
+.landing-feature-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  padding: 28px 24px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 1) inset, 0 2px 8px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.landing-feature-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(29, 78, 216, 0.3);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 1) inset, 0 14px 28px -6px rgba(15, 23, 42, 0.08);
+}
+
+.landing-feature-mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1D4ED8;
+  margin-bottom: 4px;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s ease;
+}
+
+.landing-feature-card:hover .landing-feature-mark {
+  transform: scale(1.06);
+  background: #DBEAFE;
+}
+
+.landing-feature-card:hover .landing-feature-mark svg {
+  transform: scale(1.08);
+}
+
+.landing-feature-mark svg {
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.landing-feature-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.landing-feature-desc {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Interactive Investor Pass / Ticket Mockup */
+.landing-pass-section {
+  padding: 92px 0;
+  background: #F8FAFC;
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-pass-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.landing-pass-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.landing-ticket {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 1) inset, 0 16px 40px -10px rgba(15, 23, 42, 0.1);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.landing-ticket:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 1) inset, 0 24px 50px -12px rgba(15, 23, 42, 0.14);
+}
+
+.landing-ticket-top {
+  padding: 26px 28px 22px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.landing-ticket-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1D4ED8;
+}
+
+.landing-ticket-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.landing-ticket-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Perforation Divider with Circular Notches */
+.landing-ticket-perf {
+  position: relative;
+  height: 0;
+  margin: 0 20px;
+  border-top: 2px dashed rgba(15, 23, 42, 0.15);
+}
+
+.landing-ticket-perf::before,
+.landing-ticket-perf::after {
+  content: "";
+  position: absolute;
+  top: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #F8FAFC;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+
+.landing-ticket-perf::before {
+  left: -32px;
+}
+
+.landing-ticket-perf::after {
+  right: -32px;
+}
+
+.landing-ticket-bot {
+  padding: 24px 28px 28px;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.landing-ticket-id-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--surface-dim);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+}
+
+.landing-ticket-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.landing-ticket-code {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #0F172A;
+}
+
+.landing-ticket-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+}
+
+.landing-ticket-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.landing-ticket-perk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.landing-ticket-perk svg {
+  color: #15803D;
+  flex-shrink: 0;
+}
+
+.landing-ticket-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+/* Watermark Typography Footer */
+.landing-footer {
+  position: relative;
+  background: #FFFFFF;
+  border-top: 1px solid var(--border);
+  padding: 48px 0 20px;
+  overflow: hidden;
+}
+
+.landing-footer-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px 32px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.landing-footer-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 20px;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.landing-footer-telemetry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.landing-footer-watermark {
+  margin-top: 14px;
+  text-align: center;
+  font-size: clamp(68px, 16vw, 210px);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 0.8;
+  color: transparent;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.12) 0%, rgba(15, 23, 42, 0.03) 70%, rgba(255, 255, 255, 0) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  user-select: none;
+  pointer-events: none;
+  padding-bottom: 0.04em;
+}
+
 /* Responsive Breakpoints (1024px, 768px, 480px) */
 @media (max-width: 1024px) {
   .landing-nav-links {
@@ -4063,9 +4537,45 @@ input, select, textarea { font: inherit; }
   .landing-console-metric:nth-child(2) {
     border-bottom: 1px solid var(--border);
   }
+  .landing-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .landing-pass-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
 }
 
 @media (max-width: 768px) {
+  .landing-telemetry-pill {
+    display: none;
+  }
+  .landing-pitch-card {
+    padding: 24px 20px;
+  }
+  .landing-pitch-text {
+    font-size: 20px;
+  }
+  .landing-features-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .landing-ticket-perf::before {
+    left: -28px;
+  }
+  .landing-ticket-perf::after {
+    right: -28px;
+  }
+  .landing-footer-grid {
+    grid-template-columns: 1fr;
+  }
+  .landing-footer-links {
+    justify-content: flex-start;
+  }
+  .landing-footer-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
   .landing-hero {
     padding: 44px 0 52px;
   }

@@ -16,6 +16,12 @@ import {
   ShieldCheck,
   CheckCircle2,
   HardDrive,
+  Copy,
+  Check,
+  TrendingUp,
+  Coins,
+  Wallet,
+  Compass,
 } from 'lucide-react';
 
 interface LedgerRow {
@@ -73,6 +79,8 @@ export default function LandingPage() {
   const [consoleCurrency, setConsoleCurrency] = useState<'IDR' | 'USD'>('IDR');
   const [marketFilter, setMarketFilter] = useState<'ALL' | 'IDX' | 'CRYPTO'>('ALL');
   const [extraBbcaLots, setExtraBbcaLots] = useState<number>(0);
+  const [selectedRoleIndex, setSelectedRoleIndex] = useState<number>(0);
+  const [copiedPass, setCopiedPass] = useState<boolean>(false);
 
   const isID = lang === 'id';
   const fxRate = 16400;
@@ -172,9 +180,78 @@ export default function LandingPage() {
     };
   }, [extraBbcaLots, marketFilter]);
 
+  // Investor roles for Role Selector Tabs
+  const investorRoles = useMemo(
+    () => [
+      {
+        id: 'idx-stocks',
+        title: isID ? 'Investor Saham IDX' : 'IDX Equity Investor',
+        tag: isID ? 'Standar BEI: 1 Lot = 100 Lembar' : 'IDX Standard: 1 Lot = 100 Shares',
+        pitch: isID
+          ? 'Mencatat akumulasi saham Bursa Efek Indonesia dalam standar kelipatan 100 lembar per lot. Hitung modal rata-rata tertimbang (average down atau up) secara akurat tanpa spreadsheet yang rentan rusak.'
+          : 'Track Indonesian stock accumulation in standard 100-share Lots. Calculate weighted-average cost basis seamlessly without brittle spreadsheets.',
+        specs: [
+          isID ? 'Unit Standar: 1 Lot (100 Lembar)' : 'Standard Unit: 1 Lot (100 Shares)',
+          isID ? 'Feed Harga: Yahoo Finance (.JK)' : 'Price Feed: Yahoo Finance (.JK)',
+          isID ? 'Pencatatan Dividen & Realized P/L' : 'Dividends & Realized P/L Logging',
+        ],
+      },
+      {
+        id: 'crypto-hodler',
+        title: isID ? 'Crypto HODLer' : 'Crypto HODLer',
+        tag: isID ? 'Unit Desimal: Hingga 8 Digit' : 'Fractional Units: Up to 8 Decimals',
+        pitch: isID
+          ? 'Presisi tinggi hingga 8 digit desimal untuk Bitcoin, Ethereum, dan altcoin. Pantau valuasi gabungan dalam Rupiah (IDR) dan USD secara simultan dengan konversi kurs real-time.'
+          : 'High precision up to 8 fractional decimals for Bitcoin, Ethereum, and altcoins. Monitor unified valuations in IDR and USD simultaneously with real-time FX conversion.',
+        specs: [
+          isID ? 'Presisi: 8 Digit Desimal Koin' : 'Precision: 8 Fractional Decimals',
+          isID ? 'Feed Pasar: CoinGecko API' : 'Market Feed: CoinGecko API',
+          isID ? 'Konversi Otomatis IDR & USD' : 'Automated IDR & USD Conversion',
+        ],
+      },
+      {
+        id: 'mutual-funds-cash',
+        title: isID ? 'Reksa Dana & Cash' : 'Mutual Funds & Cash',
+        tag: isID ? 'Likuiditas: Pasar Uang & Kas' : 'Liquidity: Money Market & Cash',
+        pitch: isID
+          ? 'Kelola alokasi instrumen pasar uang, surat berharga negara, dan cadangan kas likuid untuk memastikan daya beli (dry powder) tetap terukur seimbang di samping portofolio aset berisiko.'
+          : 'Manage money market allocations, sovereign debt, and liquidity reserves to ensure dry powder remains accurately balanced alongside volatile holdings.',
+        specs: [
+          isID ? 'Alokasi Cadangan Likuiditas' : 'Liquidity Buffer Allocation',
+          isID ? 'Monitoring Kas & Penyeimbang' : 'Cash & Balancing Reserve Tracker',
+          isID ? 'Pelindung Drawdown Portofolio' : 'Portfolio Drawdown Guard',
+        ],
+      },
+      {
+        id: 'fire-seeker',
+        title: isID ? 'FIRE Seeker' : 'FIRE Seeker',
+        tag: isID ? 'Metodologi: Indeks HHI Objektif' : 'Methodology: Objective HHI Index',
+        pitch: isID
+          ? 'Kuantifikasi kesehatan diversifikasi portofolio jangka panjang menggunakan Herfindahl-Hirschman Index (HHI). Cegah ketergantungan modal berlebih pada satu emiten atau koin secara objektif.'
+          : 'Measure long-term diversification health with the objective Herfindahl-Hirschman Index (HHI). Eliminate single-asset over-concentration before it threatens capital preservation.',
+        specs: [
+          isID ? 'Formula Matematis HHI = Σ (wᵢ)²' : 'Mathematical Formula HHI = Σ (wᵢ)²',
+          isID ? 'Ambang Batas Diversifikasi 0,250' : 'Diversification Threshold 0.250',
+          isID ? 'Prinsip Non-Advisory Murni (DYOR)' : 'Pure Non-Advisory Principle (DYOR)',
+        ],
+      },
+    ],
+    [isID]
+  );
+
+  const activeRole = investorRoles[selectedRoleIndex] || investorRoles[0];
+
+  const handleCopyPassCode = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText('PASS-PTFN-2026-X79K');
+      setCopiedPass(true);
+      setTimeout(() => setCopiedPass(false), 2000);
+    }
+  };
+
   return (
     <div className="landing-page" id="landing-page">
-      {/* Top Navigation Bar */}
+      {/* 1. Floating Frosted Navbar */}
       <header className="landing-navbar" id="landing-navbar">
         <div className="landing-navbar-inner">
           <div className="landing-brand-group">
@@ -183,31 +260,39 @@ export default function LandingPage() {
                 <img
                   src="/logo.png"
                   alt="Portofin"
-                  width={22}
-                  height={22}
-                  style={{ borderRadius: 4 }}
+                  width={24}
+                  height={24}
+                  style={{ borderRadius: 6 }}
                 />
               </div>
               <span className="landing-brand-name">Portofin</span>
             </Link>
             <span className="landing-brand-divider" aria-hidden="true" />
-            <span className="landing-brand-tag">
-              {isID ? 'Buku Besar Saham BEI & Kripto' : 'IDX Equities & Crypto Ledger'}
-            </span>
+            <div className="landing-telemetry-pill">
+              <span className="landing-live-dot" />
+              <span>
+                {isID
+                  ? 'v2.4 Telemetri Aktif · BEI & Kripto'
+                  : 'v2.4 Live Telemetry · IDX & Crypto'}
+              </span>
+            </div>
           </div>
 
           <nav className="landing-nav-links" aria-label="Landing Navigation">
             <a href="#konsol" className="landing-nav-link">
               {isID ? 'Konsol Buku Besar' : 'Ledger Console'}
             </a>
-            <a href="#pasar-ganda" className="landing-nav-link">
-              {isID ? 'Pasar Ganda' : 'Dual-Market'}
+            <a href="#profil-investor" className="landing-nav-link">
+              {isID ? 'Profil Investor' : 'Investor Roles'}
             </a>
-            <a href="#kendali-lokal" className="landing-nav-link">
-              {isID ? 'Arsitektur Local-First' : 'Local-First Storage'}
+            <a href="#arsitektur-fitur" className="landing-nav-link">
+              {isID ? 'Arsitektur Fitur' : 'Platform Architecture'}
             </a>
-            <a href="#diagnostik-hhi" className="landing-nav-link">
-              {isID ? 'Metodologi HHI' : 'HHI Methodology'}
+            <a href="#spesifikasi" className="landing-nav-link">
+              {isID ? 'Spesifikasi Pasar' : 'Specifications'}
+            </a>
+            <a href="#tiket-akses" className="landing-nav-link">
+              {isID ? 'Pas Investor' : 'Investor Pass'}
             </a>
           </nav>
 
@@ -246,8 +331,8 @@ export default function LandingPage() {
                     ? 'Buka Dasbor'
                     : 'Open Dashboard'
                   : isID
-                    ? 'Mulai di Mode Tamu'
-                    : 'Start in Guest Mode'}
+                    ? 'Coba Sandbox'
+                    : 'Start Sandbox'}
               </span>
             </Link>
           </div>
@@ -255,10 +340,10 @@ export default function LandingPage() {
       </header>
 
       <main className="landing-main">
-        {/* Product-First Hero & Interactive Ledger Console */}
+        {/* 2. Grand Editorial Hero & Interactive Ledger Console */}
         <section className="landing-hero" id="konsol">
           <div className="landing-container">
-            {/* Smart Local Session Detection Banner when guestAssetCount > 0 */}
+            {/* Local Session Detection Banner when guestAssetCount > 0 */}
             {guestAssetCount > 0 && !user && (
               <div className="landing-detected-banner" role="status">
                 <div className="landing-detected-info">
@@ -278,7 +363,9 @@ export default function LandingPage() {
                 </div>
                 <div className="landing-detected-actions">
                   <Link href="/dashboard" className="btn-primary landing-detected-btn">
-                    {isID ? `Buka Dasbor (${guestAssetCount} Aset)` : `Open Dashboard (${guestAssetCount})`}
+                    {isID
+                      ? `Buka Dasbor (${guestAssetCount} Aset)`
+                      : `Open Dashboard (${guestAssetCount})`}
                   </Link>
                   <button
                     type="button"
@@ -292,14 +379,14 @@ export default function LandingPage() {
               </div>
             )}
 
-            {/* Center-Aligned Editorial Header with Commanding Visual Hierarchy */}
+            {/* Editorial Hero Header */}
             <div className="landing-hero-header">
               <div className="landing-hero-eyebrow">
                 <span className="landing-eyebrow-dot" />
                 <span>
                   {isID
-                    ? 'BUKU BESAR SAHAM BEI & ASET KRIPTO'
-                    : 'IDX EQUITIES & FRACTIONAL CRYPTO LEDGER'}
+                    ? 'BUKU BESAR KEUANGAN PRESISI · PASAR SAHAM BEI & KRIPTO'
+                    : 'PRECISION FINANCIAL LEDGER · IDX EQUITIES & FRACTIONAL CRYPTO'}
                 </span>
               </div>
 
@@ -311,8 +398,8 @@ export default function LandingPage() {
 
               <p className="landing-hero-subtitle">
                 {isID
-                  ? 'Pencatatan portofolio saham Indonesia dalam satuan Lot (100 lembar) berdampingan dengan unit desimal kripto. Hitung modal rata-rata tertimbang, pantau nilai IDR & USD secara real-time, dan evaluasi risiko konsentrasi dengan indeks matematis HHI.'
-                  : 'Precision portfolio accounting for Indonesian equities in standard Lots (100 shares) alongside fractional crypto holdings. Track weighted-average cost basis, evaluate IDR & USD values, and quantify concentration risk with the mathematical HHI index.'}
+                  ? 'Precision Financial Ledger for Indonesian Investors & Modern Portfolio Tracking. Satukan pencatatan lot saham Bursa Efek Indonesia dan desimal kripto dengan kalkulasi modal rata-rata tertimbang, pemantauan kurs IDR dan USD live, serta diagnostik konsentrasi risiko matematis HHI.'
+                  : 'Precision Financial Ledger for Indonesian Investors & Modern Portfolio Tracking. Unify Indonesian stock lot accounting and fractional crypto holdings with weighted-average cost basis, real-time IDR and USD feeds, and mathematical HHI risk analytics.'}
               </p>
 
               <div className="landing-hero-actions">
@@ -321,7 +408,9 @@ export default function LandingPage() {
                   className="btn-primary landing-hero-btn-primary"
                   id="hero-cta-sandbox"
                 >
-                  <span>{isID ? 'Mulai di Mode Tamu' : 'Start in Guest Mode'}</span>
+                  <span>
+                    {isID ? 'Coba Sandbox Mode Tamu' : 'Start in Guest Sandbox'}
+                  </span>
                   <ArrowRight size={17} />
                 </Link>
 
@@ -346,7 +435,9 @@ export default function LandingPage() {
                 <div className="landing-trust-item" role="listitem">
                   <HardDrive size={15} className="landing-trust-icon" />
                   <span>
-                    {isID ? 'Data di Browser Anda (Local-First)' : 'Stored in Your Browser (Local-First)'}
+                    {isID
+                      ? 'Penyimpanan Lokal di Browser'
+                      : 'Stored in Your Browser (Local-First)'}
                   </span>
                 </div>
                 <div className="landing-trust-item" role="listitem">
@@ -727,31 +818,31 @@ export default function LandingPage() {
                           )} 150`}
                         />
                       </svg>
-                        <div className="landing-hhi-numbers">
-                          <span className="landing-hhi-main tabular">
-                            HHI = {computedLedger.hhiDecimal.toFixed(3)}
-                          </span>
-                          <span className="landing-hhi-sub">
-                            {isID
-                              ? `Skor Rasio: ${computedLedger.hhiScore100} / 100`
-                              : `Ratio Score: ${computedLedger.hhiScore100} / 100`}
-                          </span>
-                          <span
-                            className={`landing-hhi-status-badge ${
-                              computedLedger.hhiPoints < 3000 ? 'diversified' : 'concentrated'
-                            }`}
-                          >
-                            <span className="landing-hhi-status-dot" />
-                            {computedLedger.hhiPoints < 3000
-                              ? isID
-                                ? 'TERDIVERSIFIKASI'
-                                : 'DIVERSIFIED'
-                              : isID
-                                ? 'KONSENTRASI TINGGI'
-                                : 'CONCENTRATED'}
-                          </span>
-                        </div>
+                      <div className="landing-hhi-numbers">
+                        <span className="landing-hhi-main tabular">
+                          HHI = {computedLedger.hhiDecimal.toFixed(3)}
+                        </span>
+                        <span className="landing-hhi-sub">
+                          {isID
+                            ? `Skor Rasio: ${computedLedger.hhiScore100} / 100`
+                            : `Ratio Score: ${computedLedger.hhiScore100} / 100`}
+                        </span>
+                        <span
+                          className={`landing-hhi-status-badge ${
+                            computedLedger.hhiPoints < 3000 ? 'diversified' : 'concentrated'
+                          }`}
+                        >
+                          <span className="landing-hhi-status-dot" />
+                          {computedLedger.hhiPoints < 3000
+                            ? isID
+                              ? 'TERDIVERSIFIKASI'
+                              : 'DIVERSIFIED'
+                            : isID
+                              ? 'KONSENTRASI TINGGI'
+                              : 'CONCENTRATED'}
+                        </span>
                       </div>
+                    </div>
 
                     <div className="landing-alloc-breakdown">
                       <div className="landing-alloc-row tabular">
@@ -788,8 +879,228 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* SHOWCASE 1: Dual-Market Specification Table (Asymmetric Two-Column Layout) */}
-        <section className="landing-section" id="pasar-ganda">
+        {/* 3. Role Selector Tabs (Onward Summit Style) */}
+        <section className="landing-roles-section" id="profil-investor">
+          <div className="landing-roles-container">
+            <div className="landing-section-intro">
+              <div className="landing-kicker">
+                <Compass size={15} />
+                <span>
+                  {isID
+                    ? 'PANDUAN PROFIL INVESTOR / 01'
+                    : 'INVESTOR PROFILE PLAYBOOK / 01'}
+                </span>
+              </div>
+              <h2 className="landing-section-title">
+                {isID
+                  ? 'Dirancang untuk Setiap Strategi Penempatan Modal'
+                  : 'Engineered for Every Capital Allocation Strategy'}
+              </h2>
+              <p className="landing-section-desc">
+                {isID
+                  ? 'Pilih profil Anda untuk melihat bagaimana mesin buku besar Portofin mengakomodasi konvensi pasar dan kalkulasi posisi Anda secara native.'
+                  : 'Select your profile to explore how Portofin natively handles your asset market conventions and position accounting.'}
+              </p>
+            </div>
+
+            {/* Role selector chips */}
+            <div className="landing-chips" role="tablist" aria-label="Investor Profiles">
+              {investorRoles.map((role, idx) => {
+                const isSelected = selectedRoleIndex === idx;
+                return (
+                  <button
+                    key={role.id}
+                    type="button"
+                    role="tab"
+                    id={`role-tab-${idx}`}
+                    aria-selected={isSelected}
+                    aria-controls={`role-panel-${idx}`}
+                    tabIndex={isSelected ? 0 : -1}
+                    className={`landing-chip ${isSelected ? 'active' : ''}`}
+                    onClick={() => setSelectedRoleIndex(idx)}
+                  >
+                    <span>{role.title}</span>
+                    {isSelected && <span className="landing-chip-bar" aria-hidden="true" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active Pitch Card */}
+            <div
+              className="landing-pitch-card"
+              role="tabpanel"
+              id={`role-panel-${selectedRoleIndex}`}
+              aria-labelledby={`role-tab-${selectedRoleIndex}`}
+            >
+              <div className="landing-pitch-header">
+                <div className="landing-pitch-role-badge">
+                  <span>{activeRole.title}</span>
+                </div>
+                <span className="landing-pitch-tag">{activeRole.tag}</span>
+              </div>
+
+              <p className="landing-pitch-text">{activeRole.pitch}</p>
+
+              <div className="landing-pitch-footer">
+                <div className="landing-pitch-specs">
+                  {activeRole.specs.map((spec, sIdx) => (
+                    <div key={sIdx} className="landing-pitch-spec-item">
+                      <CheckCircle2 size={14} />
+                      <span>{spec}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Link href="/dashboard" className="btn-secondary landing-custody-btn">
+                  <span>{isID ? 'Coba di Dasbor' : 'Try in Dashboard'}</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. Feature Grid with Geometric SVG Marks (Onward Summit Style) */}
+        <section className="landing-features-section" id="arsitektur-fitur">
+          <div className="landing-container">
+            <div className="landing-section-intro">
+              <div className="landing-kicker">
+                <Layers size={15} />
+                <span>
+                  {isID
+                    ? 'ARSITEKTUR FITUR / 02'
+                    : 'PLATFORM ARCHITECTURE / 02'}
+                </span>
+              </div>
+              <h2 className="landing-section-title">
+                {isID
+                  ? 'Presisi Akuntansi Finansial Tanpa Kompromi'
+                  : 'Uncompromising Financial Accounting Precision'}
+              </h2>
+              <p className="landing-section-desc">
+                {isID
+                  ? 'Arsitektur teknis modern yang dirancang untuk kecepatan, kepemilikan data lokal, dan kejernihan analisis risiko kuantitatif.'
+                  : 'Modern technical architecture designed for speed, local data custody, and objective quantitative risk clarity.'}
+              </p>
+            </div>
+
+            <div className="landing-features-grid">
+              {/* Feature 1: Automated Tracking */}
+              <article className="landing-feature-card">
+                <div className="landing-feature-mark" aria-hidden="true">
+                  <svg
+                    className="landing-mark-svg"
+                    width="28"
+                    height="28"
+                    viewBox="0 0 28 28"
+                    fill="none"
+                  >
+                    <path
+                      d="M7 21L21 7M21 7H10M21 7V18"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <h3 className="landing-feature-title">
+                  {isID ? 'Valuasi Pasar Otomatis' : 'Automated Market Tracking'}
+                </h3>
+                <p className="landing-feature-desc">
+                  {isID
+                    ? 'Pembaruan harga saham BEI via Yahoo Finance (.JK) dan kripto via CoinGecko secara otomatis tanpa input manual berkala.'
+                    : 'Automated price updates for IDX equities via Yahoo Finance (.JK) and crypto via CoinGecko without recurring manual friction.'}
+                </p>
+              </article>
+
+              {/* Feature 2: Multi-Asset Telemetry */}
+              <article className="landing-feature-card">
+                <div className="landing-feature-mark" aria-hidden="true">
+                  <svg
+                    className="landing-mark-svg"
+                    width="28"
+                    height="28"
+                    viewBox="0 0 28 28"
+                    fill="none"
+                  >
+                    <circle cx="14" cy="14" r="10" stroke="currentColor" strokeWidth="2.2" />
+                    <circle cx="14" cy="14" r="4" stroke="currentColor" strokeWidth="2.2" />
+                  </svg>
+                </div>
+                <h3 className="landing-feature-title">
+                  {isID ? 'Telemetri Multi-Aset Terpadu' : 'Multi-Asset Telemetry'}
+                </h3>
+                <p className="landing-feature-desc">
+                  {isID
+                    ? 'Menyatukan konvensi Lot saham 100 lembar dan unit desimal kripto dalam satu buku besar akuntansi IDR dan USD yang koheren.'
+                    : 'Unifying 100-share stock lots and fractional crypto units into one cohesive accounting ledger in IDR and USD.'}
+                </p>
+              </article>
+
+              {/* Feature 3: Asset Allocation Radar */}
+              <article className="landing-feature-card">
+                <div className="landing-feature-mark" aria-hidden="true">
+                  <svg
+                    className="landing-mark-svg"
+                    width="28"
+                    height="28"
+                    viewBox="0 0 28 28"
+                    fill="none"
+                  >
+                    <path
+                      d="M14 4V24M4 14H24"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
+                    <circle cx="14" cy="14" r="7" stroke="currentColor" strokeWidth="1.8" strokeDasharray="3 3" />
+                  </svg>
+                </div>
+                <h3 className="landing-feature-title">
+                  {isID ? 'Radar Alokasi & Diagnostik HHI' : 'Asset Allocation Radar & HHI'}
+                </h3>
+                <p className="landing-feature-desc">
+                  {isID
+                    ? 'Kalkulasi matematis HHI mengkuantifikasi konsentrasi risiko portofolio secara objektif tanpa spekulasi atau saran finansial.'
+                    : 'Mathematical HHI calculation quantifies portfolio risk concentration with 100% objective, non-advisory rigor.'}
+                </p>
+              </article>
+
+              {/* Feature 4: Zero-Friction Guest Mode */}
+              <article className="landing-feature-card">
+                <div className="landing-feature-mark" aria-hidden="true">
+                  <svg
+                    className="landing-mark-svg"
+                    width="28"
+                    height="28"
+                    viewBox="0 0 28 28"
+                    fill="none"
+                  >
+                    <path
+                      d="M6 8C6 6.89543 6.89543 6 8 6H20C21.1046 6 22 6.89543 22 8V20C22 21.1046 21.1046 22 20 22H8C6.89543 22 6 21.1046 6 20V8Z"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                    />
+                    <path d="M11 14L13.5 16.5L17.5 11.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <h3 className="landing-feature-title">
+                  {isID ? 'Mode Tamu Local-First' : 'Zero-Friction Local-First'}
+                </h3>
+                <p className="landing-feature-desc">
+                  {isID
+                    ? 'Mulai mencatat seketika di peramban Anda tanpa registrasi. Cadangkan ke PostgreSQL cloud kapan pun Anda siap.'
+                    : 'Start logging instantly in your browser without registration. Sync to cloud PostgreSQL whenever you choose.'}
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. Dual-Market Specification Table (Two-Column Asymmetric Layout) */}
+        <section className="landing-section" id="spesifikasi">
           <div className="landing-container">
             <div className="landing-split-showcase">
               <div className="landing-split-info">
@@ -797,8 +1108,8 @@ export default function LandingPage() {
                   <Layers size={15} />
                   <span>
                     {isID
-                      ? 'KAPABILITAS 01 / ARSITEKTUR PASAR GANDA'
-                      : 'CAPABILITY 01 / DUAL-MARKET ARCHITECTURE'}
+                      ? 'KAPABILITAS 03 / SPESIFIKASI PASAR GANDA'
+                      : 'CAPABILITY 03 / DUAL-MARKET SPECIFICATION'}
                   </span>
                 </div>
                 <h2 className="landing-section-title">
@@ -872,221 +1183,189 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* SHOWCASE 2: Local-First Storage & Cloud Sync Architecture */}
-        <section className="landing-section landing-section-alt" id="kendali-lokal">
+        {/* 6. Interactive Pass / Ticket Mockup (Onward Summit Style) */}
+        <section className="landing-pass-section" id="tiket-akses">
           <div className="landing-container">
-            <div className="landing-section-intro">
-              <div className="landing-kicker">
-                <Database size={15} />
-                <span>
-                  {isID
-                    ? 'KAPABILITAS 02 / PENYIMPANAN LOCAL-FIRST & DEFERRED AUTH'
-                    : 'CAPABILITY 02 / LOCAL-FIRST STORAGE & DEFERRED AUTH'}
-                </span>
-              </div>
-              <h2 className="landing-section-title">
-                {isID
-                  ? 'Local-First: Kendali Penuh di Browser Anda'
-                  : 'Local-First: Complete Custody in Your Browser'}
-              </h2>
-              <p className="landing-section-desc">
-                {isID
-                  ? 'Anda tidak perlu menyerahkan alamat email atau membuat kata sandi hanya untuk mencoba mencatat portofolio. Portofin memisahkan penyimpanan lokal dan pencadangan cloud secara transparan.'
-                  : 'You should not have to hand over an email address or create a password just to test a portfolio tracker. Portofin cleanly separates local browser storage from optional cloud backup.'}
-              </p>
-            </div>
-
-            <div className="landing-custody-grid">
-              <div className="landing-custody-card">
-                <div className="landing-custody-top">
-                  <span className="landing-custody-mode">
-                    {isID ? 'MODE 1: SANDBOX LOKAL (DEFAULT)' : 'MODE 1: LOCAL SANDBOX (DEFAULT)'}
-                  </span>
-                  <span className="landing-custody-storage tabular">
-                    window.localStorage
-                  </span>
-                </div>
-                <h3 className="landing-custody-title">
-                  {isID
-                    ? 'Akses Instan Tanpa Akun & Tanpa Kredensial Pialang'
-                    : 'Instant Access with Zero Registration or Brokerage Keys'}
-                </h3>
-                <p className="landing-custody-body">
-                  {isID
-                    ? 'Seluruh portofolio, daftar kepemilikan aset, dan riwayat transaksi beli/jual disimpan langsung di browser perangkat Anda. Kami tidak pernah meminta akses login sekuritas, API key bursa, maupun seed phrase dompet kripto Anda.'
-                    : 'All portfolios, asset holdings, and buy/sell transaction logs are stored directly in your browser. We never ask for brokerage credentials, exchange API keys, or crypto wallet seed phrases.'}
-                </p>
-                <div className="landing-custody-footer">
-                  <Link href="/dashboard" className="btn-primary landing-custody-btn">
-                    <span>
-                      {isID ? 'Buka Ruang Kerja Mode Tamu' : 'Open Guest Workspace'}
-                    </span>
-                  </Link>
-                </div>
-              </div>
-
-              <div className="landing-custody-card">
-                <div className="landing-custody-top">
-                  <span className="landing-custody-mode cloud">
-                    {isID ? 'MODE 2: CADANGAN CLOUD (OPSIONAL)' : 'MODE 2: CLOUD BACKUP (OPTIONAL)'}
-                  </span>
-                  <span className="landing-custody-storage tabular">
-                    Supabase PostgreSQL
-                  </span>
-                </div>
-                <h3 className="landing-custody-title">
-                  {isID
-                    ? 'Migrasi Otomatis Saat Anda Siap Sinkronisasi Lintas Perangkat'
-                    : 'Automatic Migration When You Want Multi-Device Sync'}
-                </h3>
-                <p className="landing-custody-body">
-                  {isID
-                    ? 'Kapan pun Anda ingin mengakses portofolio dari ponsel atau komputer lain, cukup klik tombol Simpan ke Cloud. Mesin sinkronisasi idempoten Portofin otomatis memindahkan seluruh aset lokal Anda ke database cloud tanpa duplikasi.'
-                    : 'Whenever you want to access your ledger from another phone or computer, click Save to Cloud. Portofin automatically migrates your local holdings and transactions into your cloud account without duplication.'}
-                </p>
-                <div className="landing-custody-footer">
-                  <button
-                    type="button"
-                    onClick={() => openAuthModal()}
-                    className="btn-secondary landing-custody-cloud-btn"
-                  >
-                    <CloudUpload size={16} />
-                    <span>
-                      {isID
-                        ? 'Masuk / Cadangkan ke Cloud'
-                        : 'Sign In / Back Up to Cloud'}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SHOWCASE 3: Objective Risk Diagnostics (HHI) & Non-Advisory Ethics */}
-        <section className="landing-section" id="diagnostik-hhi">
-          <div className="landing-container">
-            <div className="landing-section-intro">
-              <div className="landing-kicker">
-                <Scale size={15} />
-                <span>
-                  {isID
-                    ? 'KAPABILITAS 03 / DIAGNOSTIK RISIKO OBJEKTIF & ETIKA NON-ADVISORY'
-                    : 'CAPABILITY 03 / OBJECTIVE RISK DIAGNOSTICS & NON-ADVISORY ETHICS'}
-                </span>
-              </div>
-              <h2 className="landing-section-title">
-                {isID
-                  ? 'Diagnostik Risiko Objektif (HHI), Bebas Spekulasi'
-                  : 'Objective Risk Diagnostics (HHI), Zero Speculative Noise'}
-              </h2>
-              <p className="landing-section-desc">
-                {isID
-                  ? 'Keputusan penempatan modal menyangkut uang nyata dan tidak boleh diserahkan pada halusinasi model bahasa. Portofin membatasi fitur analitik secara ketat pada perhitungan matematika portofolio yang dapat diverifikasi.'
-                  : 'Capital allocation involves real money and should never rely on language model speculation. Portofin restricts its analytics strictly to verifiable portfolio mathematics.'}
-              </p>
-            </div>
-
-            <div className="landing-methodology-layout">
-              <div className="landing-formula-list">
-                <div className="landing-formula-item">
-                  <div className="landing-formula-header">
-                    <span className="landing-formula-title">
-                      {isID
-                        ? 'Indeks Konsentrasi Herfindahl-Hirschman (HHI)'
-                        : 'Herfindahl-Hirschman Concentration Index (HHI)'}
-                    </span>
-                    <code className="landing-formula-code">HHI = Σ (wᵢ)²</code>
-                  </div>
-                  <p className="landing-formula-desc">
-                    {isID
-                      ? 'Mengukur tingkat ketergantungan portofolio pada satu aset. Jika satu saham atau koin menyumbang lebih dari 50% nilai total, indeks HHI akan memberikan peringatan konsentrasi eksposur secara matematis.'
-                      : 'Measures portfolio dependency on individual positions. If a single stock or coin exceeds 50% of total net worth, the HHI index mathematically flags single-asset exposure risk.'}
-                  </p>
-                </div>
-
-                <div className="landing-formula-item">
-                  <div className="landing-formula-header">
-                    <span className="landing-formula-title">
-                      {isID
-                        ? 'Harga Rata-Rata Tertimbang & Realized P/L'
-                        : 'Weighted-Average Cost Basis & Realized P/L'}
-                    </span>
-                    <code className="landing-formula-code">
-                      AvgCost = Σ(Qty × Price) / Σ(Qty)
-                    </code>
-                  </div>
-                  <p className="landing-formula-desc">
-                    {isID
-                      ? 'Setiap transaksi beli baru memperbarui harga modal rata-rata secara presisi. Saat Anda mencatat penjualan sebagian atau seluruh posisi, Portofin memisahkan Laba/Rugi Terealisasi (Realized P/L) dari posisi mengambang (Floating P/L).'
-                      : 'Every new buy order updates your weighted-average cost basis. When you log partial or full sales, Portofin cleanly separates Realized P/L from Floating Unrealized P/L.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="landing-guardrail-box" role="note">
-                <div className="landing-guardrail-header">
-                  <Scale size={18} />
+            <div className="landing-pass-grid">
+              <div className="landing-pass-info">
+                <div className="landing-kicker">
+                  <ShieldCheck size={15} />
                   <span>
                     {isID
-                      ? 'Komitmen Etika Non-Advisory (DYOR)'
-                      : 'Non-Advisory Ethical Commitment (DYOR)'}
+                      ? 'PAS INVESTOR / AKSES MANDIRI'
+                      : 'INVESTOR PASS / SELF-SERVE ACCESS'}
                   </span>
                 </div>
-                <p className="landing-guardrail-text">
+                <h2 className="landing-section-title">
                   {isID
-                    ? 'Portofin adalah perangkat lunak pencatatan akuntansi portofolio dan kalkulator konsentrasi risiko kuantitatif. Portofin bukan penasihat investasi berlisensi, perencana keuangan, atau pialang efek.'
-                    : 'Portofin is a portfolio accounting ledger and quantitative risk concentration calculator. Portofin is not a licensed investment advisor, financial planner, or broker-dealer.'}
-                </p>
-                <p className="landing-guardrail-text">
+                    ? 'Tiket Masuk Ruang Kerja Portofin Anda'
+                    : 'Your Portofin Investor Workspace Pass'}
+                </h2>
+                <p className="landing-section-desc">
                   {isID
-                    ? 'Asisten analitik di dalam Portofin dirancang dengan pembatas ketat (guardrails) untuk tidak pernah memberikan perintah beli, jual, atau target harga spekulatif. Seluruh keputusan finansial berada sepenuhnya di tangan Anda (Do Your Own Research).'
-                    : 'The analytics copilot inside Portofin is engineered with strict guardrails to never issue buy orders, sell signals, or speculative price targets. All financial decisions remain 100% your own responsibility (Do Your Own Research).'}
+                    ? 'Dapatkan akses langsung ke seluruh perangkat pencatatan akuntansi portofolio, kalkulator konsentrasi risiko HHI, dan buku besar transaksi tanpa registrasi awal.'
+                    : 'Get direct access to complete portfolio accounting tools, HHI risk concentration diagnostics, and transaction ledgers with zero upfront friction.'}
                 </p>
+                <div className="landing-hero-trust-strip" role="list">
+                  <div className="landing-trust-item" role="listitem">
+                    <CheckCircle2 size={15} className="landing-trust-icon" />
+                    <span>{isID ? 'Akses Instan Mode Tamu' : 'Instant Guest Sandbox'}</span>
+                  </div>
+                  <div className="landing-trust-item" role="listitem">
+                    <Database size={15} className="landing-trust-icon" />
+                    <span>{isID ? 'Data Tersimpan Lokal di Browser' : 'Local Browser Custody'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Interactive Pass / Ticket Component with Perforation Cutout Notches */}
+              <div className="landing-ticket" role="region" aria-label="Portofin Investor Pass">
+                <div className="landing-ticket-top">
+                  <span className="landing-ticket-kicker">
+                    <CheckCircle2 size={14} />
+                    {isID ? 'PAS SANDBOX TERVERIFIKASI' : 'VERIFIED SANDBOX PASS'}
+                  </span>
+                  <h3 className="landing-ticket-title">
+                    {isID ? 'Ruang Kerja Investor Portofin' : 'Portofin Investor Workspace'}
+                  </h3>
+                  <p className="landing-ticket-meta">
+                    {isID
+                      ? 'IDR & USD Multi-Currency · Local-First Storage · Non-Advisory Engine'
+                      : 'IDR & USD Multi-Currency · Local-First Storage · Non-Advisory Engine'}
+                  </p>
+                </div>
+
+                {/* Perforation line with circular notch cutouts */}
+                <div className="landing-ticket-perf" aria-hidden="true" />
+
+                <div className="landing-ticket-bot">
+                  <div className="landing-ticket-id-strip">
+                    <div>
+                      <span className="landing-ticket-label">
+                        {isID ? 'KODE AKSES PAS' : 'PASS IDENTIFIER'}
+                      </span>
+                      <span className="landing-ticket-code tabular">PASS-PTFN-2026-X79K</span>
+                    </div>
+                    <span className="landing-ticket-badge">
+                      <span className="landing-live-dot" />
+                      {isID ? 'AKTIF DI PERAMBAN' : 'BROWSER ACTIVE'}
+                    </span>
+                  </div>
+
+                  <div className="landing-ticket-perks">
+                    <div className="landing-ticket-perk">
+                      <Check size={15} />
+                      <span>
+                        {isID
+                          ? 'Pencatatan aset tanpa batas di browser Anda'
+                          : 'Unlimited asset tracking stored directly in your browser'}
+                      </span>
+                    </div>
+                    <div className="landing-ticket-perk">
+                      <Check size={15} />
+                      <span>
+                        {isID
+                          ? '100% Bebas iklan, pelacak, dan tanpa perlu email di awal'
+                          : '100% Ad and tracker free, zero upfront email required'}
+                      </span>
+                    </div>
+                    <div className="landing-ticket-perk">
+                      <Check size={15} />
+                      <span>
+                        {isID
+                          ? 'Sinkronisasi ke cloud PostgreSQL kapan pun Anda siap'
+                          : 'Idempotent cloud PostgreSQL migration whenever you are ready'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="landing-ticket-actions">
+                    <Link href="/dashboard" className="btn-primary landing-hero-btn-primary">
+                      <span>{isID ? 'Buka Dasbor Tamu (Instan)' : 'Open Guest Dashboard'}</span>
+                      <ArrowRight size={16} />
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal()}
+                      className="btn-secondary landing-hero-btn-cloud"
+                    >
+                      <CloudUpload size={16} />
+                      <span>{isID ? 'Hubungkan Cloud' : 'Connect Cloud'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyPassCode}
+                      className="btn-secondary"
+                      title={isID ? 'Salin Kode Akses' : 'Copy Pass Code'}
+                    >
+                      {copiedPass ? <Check size={15} /> : <Copy size={15} />}
+                      <span>{copiedPass ? (isID ? 'Tersalin' : 'Copied') : (isID ? 'Salin Kode' : 'Copy Code')}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Clean Functional Footer */}
+      {/* 7. Watermark Typography Footer (Onward Summit Style) */}
       <footer className="landing-footer">
-        <div className="landing-container landing-footer-inner">
-          <div className="landing-footer-left">
+        <div className="landing-container">
+          <div className="landing-footer-grid">
             <div className="landing-brand-group">
               <div className="landing-brand-logo">
                 <img
                   src="/logo.png"
                   alt="Portofin"
-                  width={18}
-                  height={18}
-                  style={{ borderRadius: 4 }}
+                  width={22}
+                  height={22}
+                  style={{ borderRadius: 5 }}
                 />
               </div>
               <span className="landing-brand-name">Portofin</span>
             </div>
-            <p className="landing-footer-copy">
-              © 2026 Portofin.{' '}
-              {isID
-                ? 'Buku besar pencatatan & diagnostik risiko portofolio saham BEI dan kripto.'
-                : 'IDX equity and crypto portfolio accounting ledger & risk diagnostics.'}
-            </p>
+
+            <nav className="landing-footer-links" aria-label="Footer Navigation">
+              <Link href="/dashboard" className="landing-footer-link">
+                {isID ? 'Dasbor Portofolio' : 'Portfolio Dashboard'}
+              </Link>
+              <Link href="/transactions" className="landing-footer-link">
+                {isID ? 'Riwayat Transaksi' : 'Transaction Ledger'}
+              </Link>
+              <Link href="/ai-advisor" className="landing-footer-link">
+                {isID ? 'Diagnostik Risiko' : 'Risk Diagnostics'}
+              </Link>
+              <Link href="/login" className="landing-footer-link">
+                {isID ? 'Halaman Login' : 'Login Page'}
+              </Link>
+            </nav>
+
+            <div className="landing-footer-meta">
+              <p className="landing-footer-copy">
+                © 2026 Portofin.{' '}
+                {isID
+                  ? 'Buku besar pencatatan & diagnostik risiko portofolio saham BEI dan kripto.'
+                  : 'IDX equity and crypto portfolio accounting ledger & risk diagnostics.'}
+              </p>
+
+              <div className="landing-footer-telemetry">
+                <span className="landing-live-dot" />
+                <span>
+                  {isID
+                    ? 'Local-First Ready · Kurs Acuan Rp 16.400 / USD · Non-Advisory'
+                    : 'Local-First Ready · Reference FX IDR 16,400 / USD · Non-Advisory'}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <nav className="landing-footer-links" aria-label="Footer Navigation">
-            <Link href="/dashboard" className="landing-footer-link">
-              {isID ? 'Dasbor Portofolio' : 'Portfolio Dashboard'}
-            </Link>
-            <Link href="/transactions" className="landing-footer-link">
-              {isID ? 'Riwayat Transaksi' : 'Transaction Ledger'}
-            </Link>
-            <Link href="/ai-advisor" className="landing-footer-link">
-              {isID ? 'Diagnostik Risiko' : 'Risk Diagnostics'}
-            </Link>
-            <Link href="/login" className="landing-footer-link">
-              {isID ? 'Halaman Login' : 'Login Page'}
-            </Link>
-          </nav>
+          {/* Massive Editorial Typographic Watermark (Signature Onward Summit Technique) */}
+          <div className="landing-footer-watermark" aria-hidden="true">
+            PORTOFIN
+          </div>
         </div>
       </footer>
     </div>
