@@ -19,15 +19,6 @@ function smoothstep(min: number, max: number, val: number): number {
   return x * x * (3 - 2 * x);
 }
 
-function hashString(str: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < str.length; i++) {
-    hash ^= str.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
 function createPrng(seed: number): () => number {
   let s = seed >>> 0;
   return () => {
@@ -64,10 +55,6 @@ function calcFieldDensity(
   const dist = Math.sqrt(dx * dx + dy * dy);
   const radialMask = 0.1 + 0.9 * smoothstep(0.1, 0.4, dist);
   return [topFade * radialMask, botFade * radialMask * 0.9];
-}
-
-function padZero(val: number): string {
-  return val < 10 ? '0' + val : String(val);
 }
 
 function drawGlyphOnCanvas(
@@ -506,40 +493,40 @@ function ChevronIcon({ open }: { open?: boolean }) {
 }
 
 /* ==========================================================================
-   INTERACTIVE LOCAL-FIRST SECURITY BLUEPRINT (REPLACING SUMMIT MAP)
+   INTERACTIVE PRIVACY SCHEMATIC (NATURAL, JARGON-FREE)
    ========================================================================== */
 
-function InteractiveVaultBlueprint() {
+function InteractivePrivacySchematic() {
   return (
     <div className="ows-blueprint">
       <div className="ows-blueprint-grid" aria-hidden="true" />
 
       <div className="ows-blueprint-header">
-        <span className="ows-blueprint-tag">Kedaulatan Data Lokal Peramban</span>
+        <span className="ows-blueprint-tag">Privat di Perangkat Anda</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#94A3B8' }}>
-          AES-GCM · IndexedDB
+          Tanpa Database Publik
         </span>
       </div>
 
       <div className="ows-blueprint-body">
         <div className="ows-blueprint-node">
-          <span className="ows-blueprint-node-title">1. Peramban Anda</span>
+          <span className="ows-blueprint-node-title">1. Browser Anda</span>
           <span className="ows-blueprint-node-desc">
-            Penyimpanan portofolio 100% lokal di IndexedDB. Tidak dikirim ke server pusat.
+            Transaksi dan catatan aset disimpan di perangkat Anda sendiri. Anda memegang kendali penuh.
           </span>
         </div>
 
         <div className="ows-blueprint-node">
-          <span className="ows-blueprint-node-title">2. Feed Pasar Publik</span>
+          <span className="ows-blueprint-node-title">2. Pembaruan Harga Pasar</span>
           <span className="ows-blueprint-node-desc">
-            Harga BEI & Kripto dibaca searah (read-only) via Yahoo Finance & CoinGecko.
+            Harga saham BEI dan kripto dibaca otomatis untuk memperbarui nilai portofolio Anda.
           </span>
         </div>
 
         <div className="ows-blueprint-node">
           <span className="ows-blueprint-node-title">3. Server Eksternal</span>
           <span className="ows-blueprint-node-desc" style={{ color: '#F87171' }}>
-            Nol pelacak analitik. Portofin tidak menjual atau memprofil data kekayaan Anda.
+            Nol pelacak iklan. Portofin tidak menjual data kekayaan Anda kepada pihak mana pun.
           </span>
         </div>
       </div>
@@ -547,9 +534,9 @@ function InteractiveVaultBlueprint() {
       <div className="ows-blueprint-footer">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
           <span className="ows-live-dot" />
-          Status Vault: Kunci Enkripsi Klien Aktif
+          Penyimpanan Privat Aktif di Browser Anda
         </span>
-        <span style={{ color: '#94A3B8' }}>Kedaulatan Finansial Mandiri</span>
+        <span style={{ color: '#94A3B8' }}>Bebas Dipakai Tanpa Login</span>
       </div>
     </div>
   );
@@ -576,62 +563,62 @@ const BASE_LEDGER: LedgerRow[] = [
     ticker: 'BBCA',
     name: 'Bank Central Asia Tbk',
     market: 'IDX',
-    category: 'Perbankan Konsumer',
+    category: 'Saham Perbankan',
     lots: 50,
     sharesOrUnits: 5000,
     avgBuyIdr: 9000,
     marketPriceIdr: 9850,
-    description: 'Saham perbankan defensif kapitalisasi terbesar di Bursa Efek Indonesia. Satuan 100 lembar per lot terverifikasi tanpa pembulatan pecahan.',
+    description: 'Saham perbankan defensif di Bursa Efek Indonesia. Tercatat tepat dalam satuan 100 lembar per lot dengan perhitungan harga beli rata-rata otomatis.',
   },
   {
     ticker: 'BTC',
     name: 'Bitcoin',
     market: 'CRYPTO',
-    category: 'Aset Moneter Digital',
+    category: 'Aset Kripto',
     sharesOrUnits: 0.042,
     avgBuyIdr: 920000000,
     marketPriceIdr: 1120000000,
-    description: 'Penyimpan nilai desentralistik dengan presisi kalkulasi hingga 8 desimal (Satoshi). Terintegrasi dengan penilaian kurs rupiah real-time.',
+    description: 'Aset digital dengan perhitungan presisi desimal dan konversi harga rupiah secara langsung.',
   },
   {
     ticker: 'TLKM',
     name: 'Telkom Indonesia Tbk',
     market: 'IDX',
-    category: 'Infrastruktur Telekomunikasi',
+    category: 'Saham Telekomunikasi',
     lots: 100,
     sharesOrUnits: 10000,
     avgBuyIdr: 2950,
     marketPriceIdr: 3180,
-    description: 'Infrastruktur telekomunikasi digital nasional dengan arus dividen tunai stabil dan volatilitas pasar moderat.',
+    description: 'Emiten infrastruktur telekomunikasi nasional dengan histori pembagian dividen tunai berkala.',
   },
   {
     ticker: 'ETH',
     name: 'Ethereum',
     market: 'CRYPTO',
-    category: 'Komputasi Cerdas Terdesentralisasi',
+    category: 'Aset Kripto',
     sharesOrUnits: 0.45,
     avgBuyIdr: 40000000,
     marketPriceIdr: 45600000,
-    description: 'Protokol komputasi smart contract global dengan dukungan staking yield telemetry dan kalkulasi fraksional tanpa distorsi.',
+    description: 'Aset kripto smart contract dengan kalkulasi fraksional tanpa selisih pembulatan.',
   },
 ];
 
 const INVESTOR_PROFILES = [
   {
     role: 'Investor Saham BEI',
-    pitch: 'Anda fokus membangun akumulasi lot saham berfundamental prima di Bursa Efek Indonesia. Kelola dividen, pantau harga per lembar secara presisi, dan hindari distorsi pembulatan lot.',
+    pitch: 'Bagi Anda yang rutin mengakumulasi lot saham dividen atau blue-chip di Bursa Efek Indonesia dan membutuhkan catatan harga beli rata-rata yang rapi.',
   },
   {
-    role: 'Trader Kripto',
-    pitch: 'Anda bertransaksi dalam fraksi Satoshi dan Gwei hingga delapan angka di belakang koma. Dapatkan konversi nilai rupiah otomatis tanpa selisih floating point.',
+    role: 'Trader & Pemilik Kripto',
+    pitch: 'Bagi Anda yang menyimpan Bitcoin, Ethereum, dan aset digital dengan pencatatan nilai rupiah otomatis tanpa pusing menghitung kurs manual.',
   },
   {
-    role: 'Multi-Asset Allocator',
-    pitch: 'Portofolio Anda menggabungkan stabilitas dividen saham nasional dengan potensi pertumbuhan aset digital. Pantau rasio HHI agar risiko konsentrasi tetap terukur.',
+    role: 'Investor Multi-Aset',
+    pitch: 'Bagi Anda yang membagi dana ke berbagai instrumen seperti saham, kripto, reksa dana, hingga kas deposito untuk menjaga kestabilan finansial.',
   },
   {
-    role: 'Penganut Privasi Finansial',
-    pitch: 'Anda meyakini catatan keuangan pribadi Anda adalah kedaulatan Anda. Seluruh transaksi tersimpan secara lokal di peramban tanpa kewajiban mendaftar dan tanpa pelacak eksternal.',
+    role: 'Pengguna yang Menjaga Privasi',
+    pitch: 'Bagi Anda yang menghendaki catatan kekayaan pribadi tersimpan di perangkat sendiri tanpa harus mendaftar atau khawatir data disalahgunakan.',
   },
 ];
 
@@ -640,52 +627,52 @@ const ASSET_CLASSES = [
     title: 'Saham Bursa Efek Indonesia (IDX)',
     badge: '100 LEMBAR / LOT',
     badgeType: 'idx',
-    desc: 'Aturan resmi bursa domestik: 1 lot tepat setara 100 lembar. Dilengkapi pemantauan dividen tunai dan penyesuaian fraksi harga.',
-    specs: ['Satuan: Kelipatan 100 Lembar', 'Feed: Yahoo Finance IDX', 'Mata Uang: IDR (Rupiah)'],
+    desc: 'Perhitungan lot resmi bursa: 1 lot = 100 lembar. Update harga seluruh emiten BEI dan pantau histori dividen tunai.',
+    specs: ['Satuan: Kelipatan 100 Lembar', 'Harga: Real-Time BEI', 'Mata Uang: IDR (Rupiah)'],
   },
   {
-    title: 'Aset Kripto Terdesentralisasi',
-    badge: '8 DESIMAL (SATOSHI)',
+    title: 'Aset Kripto',
+    badge: 'PRESISI HINGGA 8 DESIMAL',
     badgeType: 'crypto',
-    desc: 'Mendukung Bitcoin, Ethereum, dan altcoin terkemuka dengan presisi kalkulasi hingga 0,00000001 tanpa eror floating-point.',
-    specs: ['Satuan: Hingga 8 Angka Desimal', 'Feed: CoinGecko API', 'Mata Uang: USD & IDR Real-time'],
+    desc: 'Catat Bitcoin, Ethereum, dan koin lainnya dalam fraksi satuan kecil dengan pembaruan harga pasar global dan konversi otomatis.',
+    specs: ['Satuan: 8 Angka Desimal', 'Harga: Agregator Global', 'Mata Uang: USD & IDR'],
   },
   {
     title: 'Reksa Dana & Pasar Uang',
     badge: 'NILAI AKTIVA BERSIH',
     badgeType: 'cash',
-    desc: 'Pencatatan unit penyertaan reksa dana pasar uang dan pendapatan tetap untuk menjaga likuiditas bantalan portofolio.',
-    specs: ['Satuan: 4 Angka Unit NAB', 'Karakter: Pertumbuhan Compound', 'Mata Uang: IDR (Rupiah)'],
+    desc: 'Pantau Nilai Aktiva Bersih (NAB) harian dan imbal hasil pasar uang atau pendapatan tetap untuk likuiditas dana darurat.',
+    specs: ['Satuan: Unit Penyertaan', 'Karakter: Bunga Majemuk', 'Mata Uang: IDR (Rupiah)'],
   },
   {
-    title: 'Kas & Deposito Berjangka',
-    badge: 'DANA SIAGA (DRY POWDER)',
+    title: 'Kas & Deposito',
+    badge: 'DANA SIAGA',
     badgeType: 'cash',
-    desc: 'Manajemen kas darurat dan alokasi dana siap belanja untuk mengeksekusi peluang saat bursa mengalami koreksi.',
-    specs: ['Satuan: Valuta Rupiah & Dollar', 'Fungsi: Manajemen Risiko Kas', 'Mata Uang: Multi-Currency'],
+    desc: 'Catat cadangan kas rupiah atau valuta asing yang siap dialokasikan ketika ada momentum investasi baru di pasar.',
+    specs: ['Satuan: Valuta Rupiah & USD', 'Fungsi: Dana Siaga Belanja', 'Mata Uang: Multi-Currency'],
   },
 ];
 
 const FAQ_ITEMS = [
   {
-    q: 'Apakah Portofin web app berbayar atau memerlukan langganan?',
+    q: 'Apakah Portofin web app berbayar atau ada biaya langganan?',
     a: 'Tidak. Portofin 100% gratis digunakan dan bersumber terbuka (open source). Tidak ada biaya tersembunyi, tidak ada fitur berbayar yang dikunci, dan tidak ada iklan komersial.',
   },
   {
-    q: 'Mengapa Portofin memilih pendekatan Local-First (Zero-Cloud by Default)?',
-    a: 'Kami meyakini bahwa data kekayaan dan transaksi investasi adalah informasi yang sangat privat. Dengan menyimpannya langsung di IndexedDB peramban lokal Anda, tidak ada risiko kebocoran database pusat.',
+    q: 'Apakah saya wajib membuat akun untuk menggunakan Portofin?',
+    a: 'Tidak. Anda bisa langsung membuka dasbor dalam Mode Tamu tanpa mendaftar. Data transaksi Anda akan tersimpan di browser Anda sendiri.',
   },
   {
     q: 'Bagaimana Portofin menghitung saham Indonesia (BEI)?',
-    a: 'Portofin mengikuti standar resmi PT Bursa Efek Indonesia (IDX) di mana 1 lot setara dengan tepat 100 lembar saham. Perhitungan modal dan keuntungan dilakukan pada level per lembar tanpa distorsi.',
+    a: 'Portofin mengikuti aturan resmi Bursa Efek Indonesia di mana 1 lot setara dengan tepat 100 lembar saham. Perhitungan modal dan keuntungan dilakukan pada level harga per lembar.',
   },
   {
-    q: 'Apakah data saya bisa diekspor atau dipindahkan ke perangkat lain?',
-    a: 'Bisa. Anda dapat mengekspor seluruh riwayat transaksi dan kepemilikan aset dalam format JSON atau CSV kapan saja, atau menghubungkannya ke sinkronisasi Cloud terenkripsi secara opsional.',
+    q: 'Apakah data saya bisa diekspor atau dicadangkan?',
+    a: 'Bisa. Anda dapat mengunduh seluruh data portofolio dalam file JSON atau CSV kapan saja, atau menghubungkannya ke akun cloud jika ingin diakses dari HP dan laptop sekaligus.',
   },
   {
-    q: 'Apakah Portofin terhubung langsung dengan rekening bank atau sekuritas?',
-    a: 'Tidak. Portofin adalah buku besar independen non-kustodial. Anda mencatat transaksi secara mandiri, sehingga tidak pernah ada risiko peretasan atau akses tidak sah terhadap dana Anda.',
+    q: 'Apakah Portofin terhubung langsung dengan rekening bank atau akun sekuritas saya?',
+    a: 'Tidak. Portofin adalah aplikasi pencatat mandiri. Anda memasukkan data transaksi sendiri, sehingga tidak pernah ada risiko peretasan atau akses tidak sah terhadap dana investasi Anda.',
   },
 ];
 
@@ -712,7 +699,6 @@ export default function LandingPage() {
   const [activeProfileIndex, setActiveProfileIndex] = useState<number>(0);
   const [autoAdvance, setAutoAdvance] = useState<boolean>(true);
   const [isPaused, setIsPaused] = useState<boolean>(false);
-  const [copiedPass, setCopiedPass] = useState<boolean>(false);
 
   const isID = lang === 'id';
   const fxRate = 16400;
@@ -805,10 +791,6 @@ export default function LandingPage() {
       };
     });
 
-    // Herfindahl-Hirschman Index
-    const hhiDecimal = withWeights.reduce((acc, r) => acc + r.weight * r.weight, 0);
-    const hhiPoints = Math.round(hhiDecimal * 10000);
-
     const idxValue = withWeights
       .filter((r) => r.market !== 'CRYPTO')
       .reduce((acc, r) => acc + r.marketValueIdr, 0);
@@ -824,7 +806,6 @@ export default function LandingPage() {
       totalCostIdr,
       totalPlIdr,
       totalPlPct,
-      hhiPoints,
       idxPct,
       cryptoPct,
     };
@@ -840,14 +821,6 @@ export default function LandingPage() {
 
   const activeProfile = INVESTOR_PROFILES[activeProfileIndex];
   const profileWords = useMemo(() => activeProfile.pitch.split(/\s+/), [activeProfile]);
-
-  const handleCopyPass = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText('VAULT-PTFN-LOCAL');
-      setCopiedPass(true);
-      setTimeout(() => setCopiedPass(false), 2000);
-    }
-  };
 
   return (
     <div ref={rootRef} className="ows-root">
@@ -868,7 +841,7 @@ export default function LandingPage() {
 
         <div className="ows-nav-center">
           <div className="ows-when">
-            <span>BEI & Kripto</span>
+            <span>Saham BEI & Kripto</span>
             <span className="ows-when-bar" aria-hidden="true" />
             <span>Presisi Multi-Aset</span>
             <span className="ows-when-cal">
@@ -901,7 +874,7 @@ export default function LandingPage() {
             </button>
           )}
           <Link href="/dashboard" className="ows-btn ows-btn--accent ows-btn--nav">
-            <span>Coba Sandbox</span>
+            <span>Coba Sekarang</span>
             <span className="ows-btn-arrow">
               <SmallArrow size={10} />
             </span>
@@ -936,16 +909,16 @@ export default function LandingPage() {
 
           <p className="ows-tagline">
             <span className="ows-tag-line" style={{ '--i': 0 } as React.CSSProperties}>
-              Buku Besar Keuangan Presisi untuk Investor Indonesia
+              Aplikasi Pelacak Portofolio Saham BEI & Kripto
             </span>
             <span className="ows-tag-line" style={{ '--i': 1 } as React.CSSProperties}>
-              Pantau Saham BEI (Lot) & Kripto dalam Satu Dasbor. Kustodi Lokal Peramban Tanpa Paksaan Registrasi.
+              Catat transaksi, hitung laba rugi real-time, dan pantau alokasi aset Anda. Privat dan bisa langsung dipakai tanpa login.
             </span>
           </p>
 
           <div className="ows-hero-actions">
             <Link href="/dashboard" className="ows-btn ows-btn--accent">
-              <span>Buka Sandbox Tamu (Tanpa Login)</span>
+              <span>Coba Mode Tamu (Tanpa Login)</span>
               <SmallArrow size={12} />
             </Link>
             <button
@@ -953,7 +926,7 @@ export default function LandingPage() {
               className="ows-btn ows-btn--ghost-white"
               onClick={() => openAuthModal(user ? 'signin' : 'signup')}
             >
-              <span>{user ? 'Kelola Akun Cloud' : 'Masuk Akun Cloud'}</span>
+              <span>{user ? 'Kelola Akun Cloud' : 'Masuk ke Akun Cloud'}</span>
             </button>
           </div>
 
@@ -961,10 +934,10 @@ export default function LandingPage() {
             <div className="ows-hero-resume">
               <span className="ows-live-dot" />
               <span>
-                Sesi Tamu Terdeteksi: <strong>{guestAssetCount} aset</strong> tersimpan aman di peramban ini.
+                Sesi Anda aktif: <strong>{guestAssetCount} aset</strong> tersimpan di browser ini.
               </span>
               <Link href="/dashboard" className="ows-link" style={{ color: '#FFFFFF', textDecoration: 'underline' }}>
-                Lanjutkan Dasbor
+                Lanjutkan ke Dasbor
               </Link>
             </div>
           )}
@@ -975,12 +948,12 @@ export default function LandingPage() {
       <main className="ows-main">
         {/* Section 1: Core Capabilities */}
         <section className="ows-sec ows-wrap" data-sec="expect">
-          <span className="ows-kicker">Kapabilitas Inti Portofin</span>
+          <span className="ows-kicker">Fitur Utama</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
-            Rekayasa Buku Besar Berstandar Finansial
+            Pelacakan Portofolio yang Rapi dan Akurat
           </h2>
           <p className="ows-intro ows-rise">
-            Dibangun khusus untuk investor Indonesia yang membutuhkan akurasi mutlak: mengintegrasikan aturan pasar modal BEI dengan presisi desimal aset kripto global.
+            Dibuat untuk investor Indonesia yang ingin mengelola aset saham lokal dan kripto secara terpadu tanpa ribet dan tanpa kompromi privasi.
           </p>
 
           <div className="ows-features">
@@ -988,9 +961,9 @@ export default function LandingPage() {
               <div className="ows-feature-mark">
                 <GeometricMark kind="arrow" uid={uid} index={0} />
               </div>
-              <h3 className="ows-feature-title">Aturan Lot BEI & Desimal Kripto</h3>
+              <h3 className="ows-feature-title">Pencatatan Lot Saham BEI yang Tepat</h3>
               <p className="ows-feature-text">
-                Saham Indonesia dicatat tepat dalam kelipatan 100 lembar per lot. Aset kripto dikalkulasi dalam presisi 8 desimal penuh (Satoshi & Gwei) tanpa distorsi pembulatan pecahan.
+                Sesuai standar bursa: 1 lot = 100 lembar. Harga beli rata-rata dihitung otomatis setiap kali Anda menambah posisi saham baru.
               </p>
             </article>
 
@@ -998,9 +971,9 @@ export default function LandingPage() {
               <div className="ows-feature-mark">
                 <GeometricMark kind="ring" uid={uid} index={1} />
               </div>
-              <h3 className="ows-feature-title">Kustodi Lokal Mandiri (Zero-Cloud by Default)</h3>
+              <h3 className="ows-feature-title">Pantau Alokasi & Keseimbangan Portofolio</h3>
               <p className="ows-feature-text">
-                Portofolio tersimpan di basis data IndexedDB peramban lokal Anda. Tidak ada kewajiban registrasi, tidak ada pelacakan pihak ketiga, dan tanpa penjualan data kekayaan pribadi.
+                Lihat perbandingan porsi saham dan kripto, ketahui pembagian modal Anda, dan hindari risiko modal yang bertumpu pada satu aset saja.
               </p>
             </article>
 
@@ -1008,9 +981,9 @@ export default function LandingPage() {
               <div className="ows-feature-mark">
                 <GeometricMark kind="plus" uid={uid} index={2} />
               </div>
-              <h3 className="ows-feature-title">Matematika Konsentrasi Portofolio (HHI)</h3>
+              <h3 className="ows-feature-title">Privat & Bebas Digunakan Tanpa Syarat</h3>
               <p className="ows-feature-text">
-                Evaluasi diversifikasi modal secara kuantitatif dengan skor Herfindahl-Hirschman Index dan visualisator bobot aset, dilengkapi simulasi pesanan beli dan jual seketika.
+                Langsung gunakan di browser Anda tanpa perlu mendaftar email atau kartu kredit. Data Anda tersimpan di perangkat Anda sendiri.
               </p>
             </article>
           </div>
@@ -1025,9 +998,9 @@ export default function LandingPage() {
           onFocus={() => setIsPaused(true)}
           onBlur={() => setIsPaused(false)}
         >
-          <span className="ows-kicker">Kesesuaian dengan Gaya Investasi Anda</span>
+          <span className="ows-kicker">Untuk Siapa Portofin Dibuat</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
-            Profil Pengelola Modal
+            Disesuaikan dengan Kebutuhan Investasi Anda
           </h2>
 
           <div className="ows-chips ows-rise" role="tablist" aria-label="Profil Investor">
@@ -1069,30 +1042,30 @@ export default function LandingPage() {
           </p>
         </section>
 
-        {/* Section 3: Live Ledger Simulation & Telemetry */}
+        {/* Section 3: Live Ledger Simulation */}
         <section className="ows-sec ows-wrap" data-sec="agenda">
           <div className="ows-sec-head">
             <div>
-              <span className="ows-kicker">Simulasi Buku Besar Langsung</span>
+              <span className="ows-kicker">Simulasi Portofolio Langsung</span>
               <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
-                Buku Besar Posisi & Simulasi Lot
+                Buku Besar Posisi & Simulasi Beli
               </h2>
               <p className="ows-intro ows-rise">
-                Pantau komposisi portofolio real-time, evaluasi keuntungan yang belum direalisasikan, dan uji dampak transaksi tambahan langsung pada skor risiko HHI.
+                Lihat bagaimana Portofin menghitung keuntungan belum terealisasi dan mengalkulasi ulang nilai portofolio saat Anda menambah posisi baru.
               </p>
             </div>
 
             <div className="ows-saved ows-rise" data-on={extraBbcaLots > 0 ? '' : undefined}>
               <span>Status Simulasi:</span>
               <strong className="ows-saved-n">
-                {extraBbcaLots > 0 ? `+${extraBbcaLots} Lot BBCA Aktif` : 'Posisi Riil'}
+                {extraBbcaLots > 0 ? `+${extraBbcaLots} Lot BBCA Ditambahkan` : 'Posisi Riil'}
               </strong>
               <button
                 type="button"
                 className="ows-btn ows-btn--dark ows-btn--sm"
                 onClick={() => setExtraBbcaLots((prev) => (prev > 0 ? 0 : 20))}
               >
-                {extraBbcaLots > 0 ? 'Reset Simulasi' : 'Uji +20 Lot BBCA'}
+                {extraBbcaLots > 0 ? 'Reset Simulasi' : 'Coba Beli +20 Lot BBCA'}
               </button>
             </div>
           </div>
@@ -1100,7 +1073,7 @@ export default function LandingPage() {
           {/* Telemetry Metrics Strip */}
           <div className="ows-telemetry-strip ows-rise">
             <div className="ows-telemetry-col">
-              <span className="ows-telemetry-label">Total Nilai Buku</span>
+              <span className="ows-telemetry-label">Total Nilai Portofolio</span>
               <span className="ows-telemetry-val">{formatMoney(computedLedger.totalValueIdr)}</span>
               <span className="ows-telemetry-sub">
                 Modal: {formatMoney(computedLedger.totalCostIdr)}
@@ -1108,7 +1081,7 @@ export default function LandingPage() {
             </div>
 
             <div className="ows-telemetry-col">
-              <span className="ows-telemetry-label">Keuntungan Belum Realisasi</span>
+              <span className="ows-telemetry-label">Keuntungan / Kerugian (P/L)</span>
               <span className="ows-telemetry-val" style={{ color: computedLedger.totalPlIdr >= 0 ? '#34D399' : '#F87171' }}>
                 {computedLedger.totalPlIdr >= 0 ? '+' : ''}
                 {formatMoney(computedLedger.totalPlIdr)}
@@ -1120,10 +1093,10 @@ export default function LandingPage() {
             </div>
 
             <div className="ows-telemetry-col">
-              <span className="ows-telemetry-label">Konsentrasi Risiko (HHI)</span>
-              <span className="ows-telemetry-val">{computedLedger.hhiPoints.toLocaleString()}</span>
+              <span className="ows-telemetry-label">Keseimbangan Portofolio</span>
+              <span className="ows-telemetry-val">Terdiversifikasi</span>
               <span className="ows-telemetry-sub">
-                {computedLedger.hhiPoints < 2500 ? 'Konsentrasi Sehat' : 'Konsentrasi Moderat'}
+                Modal terbagi ke 4 aset
               </span>
             </div>
 
@@ -1133,7 +1106,7 @@ export default function LandingPage() {
                 {computedLedger.idxPct.toFixed(0)}% / {computedLedger.cryptoPct.toFixed(0)}%
               </span>
               <span className="ows-telemetry-sub">
-                BEI: {formatMoney(computedLedger.totalValueIdr * (computedLedger.idxPct / 100))}
+                Saham: {formatMoney(computedLedger.totalValueIdr * (computedLedger.idxPct / 100))}
               </span>
             </div>
           </div>
@@ -1151,7 +1124,7 @@ export default function LandingPage() {
                     aria-pressed={marketFilter === filter}
                     onClick={() => setMarketFilter(filter)}
                   >
-                    <span>{filter === 'ALL' ? 'Semua Pasar' : filter === 'IDX' ? 'Saham BEI' : 'Kripto'}</span>
+                    <span>{filter === 'ALL' ? 'Semua Aset' : filter === 'IDX' ? 'Saham BEI' : 'Kripto'}</span>
                     <span className="ows-chip-n">{count}</span>
                   </button>
                 );
@@ -1226,14 +1199,14 @@ export default function LandingPage() {
                           <strong>Harga Beli Rata-Rata:</strong> {formatMoney(row.avgBuyIdr)}
                         </div>
                         <div>
-                          <strong>Harga Pasar Terkini:</strong> {formatMoney(row.marketPriceIdr)}
+                          <strong>Harga Pasar Saat Ini:</strong> {formatMoney(row.marketPriceIdr)}
                         </div>
                         <div>
-                          <strong>Bobot Portofolio:</strong> {row.weightPct.toFixed(1)}%
+                          <strong>Porsi Portofolio:</strong> {row.weightPct.toFixed(1)}%
                         </div>
                       </div>
                       <Link href="/dashboard" className="ows-link">
-                        <SmallArrow size={11} /> Buka dan kelola posisi ini di Dasbor Portofin
+                        <SmallArrow size={11} /> Buka dan kelola portofolio Anda di Dasbor
                       </Link>
                     </div>
                   </div>
@@ -1243,14 +1216,14 @@ export default function LandingPage() {
           </ol>
         </section>
 
-        {/* Section 4: Supported Asset Universes (Replaces Speakers) */}
+        {/* Section 4: Supported Asset Classes */}
         <section className="ows-sec ows-wrap" data-sec="assets">
-          <span className="ows-kicker">Cakupan Pasar</span>
+          <span className="ows-kicker">Instrumen Investasi</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
-            Kelas Aset yang Didukung
+            Mendukung Berbagai Aset Pilihan Anda
           </h2>
           <p className="ows-intro ows-rise">
-            Setiap instrumen di Portofin diproses sesuai karakteristik teknis aslinya: tanpa konversi sembrono dan tanpa manipulasi saldo.
+            Catat dan pantau seluruh instrumen keuangan Anda dalam satu dasbor yang rapi dan terorganisir.
           </p>
 
           <div className="ows-asset-grid">
@@ -1276,38 +1249,36 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Section 5: Custody & Privacy Architecture (Replaces Event Map) */}
+        {/* Section 5: Privacy & Security */}
         <section className="ows-sec ows-wrap" data-sec="venue">
-          <span className="ows-kicker">Keamanan & Kustodi</span>
+          <span className="ows-kicker">Privasi & Keamanan</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
-            Infrastruktur Kedaulatan Data Lokal
+            Kedaulatan Data Finansial Anda Terjaga Penuh
           </h2>
 
           <div className="ows-venue ows-rise">
             <div className="ows-venue-info">
-              <p className="ows-venue-name">Kedaulatan Finansial di Perangkat Anda</p>
+              <p className="ows-venue-name">Data Anda adalah Hak Anda</p>
               <p className="ows-venue-addr">
-                IndexedDB Local Storage · Web Crypto API AES-GCM
-                <br />
-                Buku Besar Pribadi Tanpa Database Terpusat yang Rentan
+                Portofin dirancang dengan prinsip bahwa informasi keuangan Anda tidak boleh diintip, dijual, atau disimpan di server publik kami.
               </p>
 
               <ul className="ows-notes">
                 <li>
                   <SmallArrow size={10} />
-                  <span>Kustodi data tersimpan secara lokal dan aman di browser pengguna</span>
+                  <span>Data transaksi Anda disimpan privat langsung di browser Anda sendiri</span>
                 </li>
                 <li>
                   <SmallArrow size={10} />
-                  <span>Nol pelacakan identitas, analitik pihak ketiga, atau cookies komersial</span>
+                  <span>Bisa langsung dipakai tanpa login, tanpa nomor HP, dan tanpa email</span>
                 </li>
                 <li>
                   <SmallArrow size={10} />
-                  <span>Dukungan ekspor dan impor portofolio format terbuka (JSON/CSV) kapan pun</span>
+                  <span>Bebas mengunduh file cadangan portofolio (JSON atau CSV) kapan saja</span>
                 </li>
                 <li>
                   <SmallArrow size={10} />
-                  <span>Opsi sinkronisasi multi-perangkat terenkripsi bila Anda membutuhkan</span>
+                  <span>Tersedia opsi sinkronisasi akun jika ingin membuka portofolio dari HP</span>
                 </li>
               </ul>
 
@@ -1322,18 +1293,18 @@ export default function LandingPage() {
                   onClick={() => openAuthModal('signup')}
                 >
                   <SmallArrow size={10} />
-                  <span>Aktifkan Sinkronisasi Terenkripsi</span>
+                  <span>Buat Akun untuk Akses Multi-Perangkat</span>
                 </button>
               </div>
             </div>
 
-            <InteractiveVaultBlueprint />
+            <InteractivePrivacySchematic />
           </div>
         </section>
 
         {/* Section 6: FAQ */}
         <section className="ows-sec ows-wrap" data-sec="faq">
-          <span className="ows-kicker">Transparansi & Bantuan</span>
+          <span className="ows-kicker">Bantuan & Informasi</span>
           <h2 className="ows-h2 ows-rise" style={{ marginTop: '8px' }}>
             Pertanyaan yang Sering Diajukan
           </h2>
@@ -1365,7 +1336,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Section 7: Access Pass & Registration (The Portofin Local Vault Card) */}
+        {/* Section 7: Quick Start CTA */}
         <section className="ows-band" data-sec="register">
           <InteractiveCanvasField
             mode="band"
@@ -1377,22 +1348,22 @@ export default function LandingPage() {
 
           <div className="ows-wrap ows-band-grid">
             <div className="ows-band-copy">
-              <span className="ows-kicker ows-kicker--light">Akses Langsung Tanpa Hambatan</span>
-              <h2 className="ows-band-title">Mulai Buku Besar Anda</h2>
+              <span className="ows-kicker ows-kicker--light">Mulai Sekarang</span>
+              <h2 className="ows-band-title">Kelola Portofolio Anda dengan Lebih Rapi</h2>
               <p className="ows-band-sub">
-                Tidak perlu kartu kredit atau pendaftaran formulir rumit. Langsung buka sandbox lokal dan rasakan presisi manajemen aset yang sesungguhnya.
+                Tanpa biaya, tanpa formulir panjang, dan tanpa kartu kredit. Anda bisa langsung mencoba dasbor Portofin dalam hitungan detik.
               </p>
 
               <div className="ows-count" aria-live="off">
-                <span className="ows-count-label">Telemetri Pasar & Keamanan Klien</span>
+                <span className="ows-count-label">Status Layanan & Pasar</span>
                 <div className="ows-count-cells" style={{ marginTop: '12px' }}>
                   <div className="ows-count-cell" style={{ flex: 1, padding: '12px 14px', alignItems: 'flex-start' }}>
                     <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#93C5FD', fontFamily: 'var(--font-mono)' }}>Bursa Saham BEI</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF', marginTop: '4px' }}>Sesi Pasar Aktif</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFFFFF', marginTop: '4px' }}>Data Pasar Terhubung</span>
                   </div>
                   <div className="ows-count-cell" style={{ flex: 1, padding: '12px 14px', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#93C5FD', fontFamily: 'var(--font-mono)' }}>Pasar Kripto Global</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#34D399', marginTop: '4px' }}>24/7/365 Real-Time</span>
+                    <span style={{ fontSize: '11px', textTransform: 'uppercase', color: '#93C5FD', fontFamily: 'var(--font-mono)' }}>Aset Kripto Global</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#34D399', marginTop: '4px' }}>24/7 Real-Time</span>
                   </div>
                 </div>
               </div>
@@ -1400,67 +1371,62 @@ export default function LandingPage() {
               <div className="ows-seats">
                 <div className="ows-seats-top">
                   <span>
-                    <strong>100%</strong> Kedaulatan Data Lokal
+                    <strong>100%</strong> Privat di Perangkat Anda
                   </span>
-                  <span>Peramban Mandiri</span>
+                  <span>Bebas Digunakan</span>
                 </div>
-                <div className="ows-meter" role="meter" aria-label="Status Kustodi" aria-valuenow={100}>
+                <div className="ows-meter" role="meter" aria-label="Status Privasi" aria-valuenow={100}>
                   <i style={{ width: '100%' }} />
                 </div>
               </div>
             </div>
 
-            {/* Portofin Local Vault Pass */}
+            {/* Clean Quick-Start Card */}
             <div className="ows-card">
-              <div className="ows-ticket" role="status">
-                <div className="ows-ticket-top">
-                  <span className="ows-kicker">Kartu Vault Portofin</span>
-                  <p className="ows-ticket-name">Tiket Vault Mandiri</p>
-                  <p className="ows-ticket-meta">
-                    Kustodi IndexedDB · Tanpa Registrasi · Presisi BEI & Kripto
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                <div>
+                  <span className="ows-kicker">Akses Cepat</span>
+                  <h3 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ows-ink)', marginTop: '6px', letterSpacing: '-0.02em' }}>
+                    Mulai dengan Mode Tamu
+                  </h3>
+                  <p style={{ fontSize: '13.5px', color: 'var(--ows-muted)', marginTop: '4px', lineHeight: 1.5 }}>
+                    Langsung catat dan pantau aset Anda. Data akan tersimpan aman di browser Anda saat ini.
                   </p>
                 </div>
 
-                <div className="ows-ticket-perf" aria-hidden="true" />
-
-                <div className="ows-ticket-bot">
-                  <div>
-                    <span className="ows-ticket-label">ID Vault Lokal</span>
-                    <span className="ows-ticket-code">VAULT-PTFN-LOCAL</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px 16px', background: 'var(--ows-tint)', borderRadius: '8px', fontSize: '13px', color: 'var(--ows-ink)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <SmallArrow size={10} />
+                    <span>Perhitungan otomatis 1 lot = 100 lembar saham BEI</span>
                   </div>
-
-                  <div className="ows-ticket-perks">
-                    <div className="ows-ticket-perk">
-                      <SmallArrow size={10} />
-                      <span>Kalkulasi lot saham otomatis (100 lembar per lot)</span>
-                    </div>
-                    <div className="ows-ticket-perk">
-                      <SmallArrow size={10} />
-                      <span>Presisi kripto 8 desimal tanpa distorsi floating point</span>
-                    </div>
-                    <div className="ows-ticket-perk">
-                      <SmallArrow size={10} />
-                      <span>Telemetri risiko konsentrasi Indeks HHI real-time</span>
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <SmallArrow size={10} />
+                    <span>Lacak keuntungan & kerugian (P/L) secara real-time</span>
                   </div>
-
-                  <div className="ows-ticket-actions">
-                    <Link
-                      href="/dashboard"
-                      className="ows-btn ows-btn--accent ows-btn--wide"
-                      style={{ height: '46px' }}
-                    >
-                      <span>Buka Sandbox Tamu Sekarang</span>
-                      <SmallArrow size={12} />
-                    </Link>
-                    <button
-                      type="button"
-                      className="ows-link"
-                      onClick={handleCopyPass}
-                    >
-                      {copiedPass ? 'ID Vault Tersalin!' : 'Salin ID Vault'}
-                    </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <SmallArrow size={10} />
+                    <span>Konversi nilai rupiah dan dollar (IDR/USD) otomatis</span>
                   </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
+                  <Link
+                    href="/dashboard"
+                    className="ows-btn ows-btn--accent ows-btn--wide"
+                    style={{ height: '46px' }}
+                  >
+                    <span>Buka Dasbor Portofolio Sekarang</span>
+                    <SmallArrow size={12} />
+                  </Link>
+
+                  <button
+                    type="button"
+                    className="ows-link"
+                    onClick={() => openAuthModal('signin')}
+                    style={{ justifyContent: 'center', padding: '6px' }}
+                  >
+                    Sudah punya akun? Masuk di sini
+                  </button>
                 </div>
               </div>
             </div>
@@ -1491,7 +1457,7 @@ export default function LandingPage() {
           </nav>
 
           <p className="ows-foot-note">
-            © 2026 Portofin. Buku besar keuangan presisi multi-aset untuk saham BEI dan aset digital. Bebas biaya dan bersumber terbuka.
+            © 2026 Portofin. Aplikasi pelacak portofolio saham BEI dan kripto untuk investor Indonesia. Bebas biaya dan bersumber terbuka.
           </p>
         </div>
 
